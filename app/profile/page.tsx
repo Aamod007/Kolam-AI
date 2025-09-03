@@ -8,10 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Camera, User, Mail, Edit3, Save, X, Upload, LogOut } from "lucide-react";
+import { Camera, User, Mail, Edit3, Save, X, Upload, LogOut, ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Image from 'next/image';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const auth = useAuth();
   const user = auth?.user;
   const [username, setUsername] = useState("");
@@ -151,7 +153,16 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
-      <Card className="w-full max-w-lg p-8 shadow-2xl rounded-3xl border bg-card/80 backdrop-blur-sm text-card-foreground mx-auto">
+      <Card className="w-full max-w-lg p-8 shadow-2xl rounded-3xl border bg-card/80 backdrop-blur-sm text-card-foreground mx-auto relative">
+        {/* Back button */}
+        <button
+          className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors z-10 bg-white/80 dark:bg-gray-900/80 rounded-full p-2 shadow"
+          onClick={() => router.push("/")}
+          aria-label="Go home"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="hidden sm:inline text-base font-medium">Home</span>
+        </button>
         {!editMode ? (
           <div className="flex flex-col items-center gap-6">
             {/* Avatar Section */}
