@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { Camera, User, Mail, Edit3, Save, X, Upload, LogOut } from "lucide-react";
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const auth = useAuth();
@@ -157,7 +158,7 @@ export default function ProfilePage() {
             <div className="relative group">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-accent/20 bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center shadow-lg">
                 {profileImageUrl ? (
-                  <img src={profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                  <Image src={profileImageUrl} alt="Profile" width={128} height={128} className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-5xl text-accent font-bold">
                     {username ? username[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : '-')}
@@ -225,7 +226,7 @@ export default function ProfilePage() {
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-accent/20 bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center shadow-lg">
                   {profileImageUrl ? (
-                    <img src={profileImageUrl} alt="Profile" className="w-full h-full object-cover" />
+                    <Image src={profileImageUrl} alt="Profile" width={96} height={96} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-3xl text-accent font-bold">
                       {username ? username[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : '-')}

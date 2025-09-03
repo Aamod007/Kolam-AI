@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from './auth-context';
 import { supabase } from '../../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 export function Navbar() {
   const { user } = useAuth() || {};
@@ -39,9 +40,11 @@ export function Navbar() {
           {user ? (
             <Link href="/profile" className="ml-4 rounded-full border-2 border-accent p-1 bg-white dark:bg-gray-900 hover:shadow-lg transition" aria-label="Profile">
               {profileImageUrl ? (
-                <img
+                <Image
                   src={profileImageUrl}
                   alt="Profile"
+                  width={32}
+                  height={32}
                   className="w-8 h-8 rounded-full object-cover"
                 />
               ) : (

@@ -4,7 +4,10 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: '10mb'
     }
-  }
+  },
+  images: {
+    domains: ['gcphodfadkaizxrrprjs.supabase.co'],
+  },
 }
 
 export default nextConfig

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/components/site/auth-context'
 import Link from 'next/link'
+import Image from 'next/image';
 
 type Analysis = {
   grid?: { rows: number; cols: number; dotCount: number }
@@ -120,7 +121,7 @@ export default function RecognitionPage() {
       <Navbar />
       <main className="container py-10">
         <h1 className="text-3xl font-bold">Kolam Recognition</h1>
-        <p className="text-muted-foreground mt-1">Upload a Kolam image. We'll detect dots, symmetry and classify the style.</p>
+        <p className="text-muted-foreground mt-1">Upload a Kolam image. We&#39;ll detect dots, symmetry and classify the style.</p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           <Card>
@@ -137,7 +138,7 @@ export default function RecognitionPage() {
                 </div>
                 {preview && (
                   <div className="rounded-lg overflow-hidden border">
-                    <img src={preview} alt="preview" className="w-full object-contain max-h-96 bg-muted" />
+                    <Image src={preview} alt="preview" width={600} height={400} className="w-full object-contain max-h-96 bg-muted" />
                   </div>
                 )}
                 {loading && (
