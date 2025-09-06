@@ -44,6 +44,7 @@ export default function RecognitionPage() {
   const [geminiResult, setGeminiResult] = React.useState<any | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   const [preview, setPreview] = React.useState<string | null>(null)
+  const [overlayUrl, setOverlayUrl] = React.useState<string | null>(null)
   const [progress, setProgress] = React.useState<number>(0)
   const [reanalyzing, setReanalyzing] = React.useState(false)
   const [tip, setTip] = React.useState<string | null>(null)
@@ -146,10 +147,37 @@ export default function RecognitionPage() {
                 <div className="flex gap-2">
                   <Button onClick={analyze} disabled={!file || loading}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
                   {file && <Button variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
+                  {file && (
+                    <Button
+                      variant="outline"
+                      onClick={async () => {
+                        setOverlayUrl(null)
+                        try {
+                          const form = new FormData()
+                          form.append('image', file)
+                          const res = await fetch('/api/analyze/overlay', { method: 'POST', body: form })
+                          if (!res.ok) throw new Error(await res.text())
+                          const blob = await res.blob()
+                          const url = URL.createObjectURL(blob)
+                          setOverlayUrl(url)
+                        } catch (e: any) {
+                          setError(e?.message || 'Failed to fetch overlay')
+                        }
+                      }}
+                    >
+                      Show detected dots
+                    </Button>
+                  )}
                 </div>
                 {preview && (
                   <div className="rounded-lg overflow-hidden border">
                     <Image src={preview} alt="preview" width={600} height={400} className="w-full object-contain max-h-96 bg-muted" />
+                    {overlayUrl && (
+                      <div className="mt-2">
+                        <div className="text-xs text-muted-foreground mb-1">Detected dots overlay</div>
+                        <img src={overlayUrl} alt="overlay" className="w-full object-contain rounded" />
+                      </div>
+                    )}
                   </div>
                 )}
                 {loading && (
