@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     // installed, return 501 and instruct how to configure it.
     let GoogleGenerativeAI: any = null
     try {
-      // Use eval to avoid bundler static analysis; this will import at runtime.
+      // Use eval to avoid bundler static analysis; this will import at the runtime.
       // @ts-ignore runtime import via eval
       const mod = await eval('import("@google/generative-ai")')
       GoogleGenerativeAI = (mod as any).GoogleGenerativeAI
