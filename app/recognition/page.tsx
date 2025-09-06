@@ -1,5 +1,6 @@
 'use client'
 import * as React from 'react'
+import { supabase } from '@/lib/supabaseClient'
 import { Navbar } from '@/components/site/navbar'
 import { Footer } from '@/components/site/footer'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,7 +46,9 @@ export default function RecognitionPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [preview, setPreview] = React.useState<string | null>(null)
   const [overlayUrl, setOverlayUrl] = React.useState<string | null>(null)
+  const [preferGemini, setPreferGemini] = React.useState<boolean>(true)
   const [progress, setProgress] = React.useState<number>(0)
+  const [consentGiven, setConsentGiven] = React.useState<boolean>(false)
   const [reanalyzing, setReanalyzing] = React.useState(false)
   const [tip, setTip] = React.useState<string | null>(null)
 
@@ -56,6 +59,36 @@ export default function RecognitionPage() {
     setError(null)
     setPreview(f ? URL.createObjectURL(f) : null)
   }
+
+  // Load preference from localStorage
+  React.useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        // Try to read from Supabase profile for authenticated user
+        const authUser = (await supabase.auth.getUser()).data.user
+        if (authUser && mounted) {
+          const { data, error } = await supabase.from('profiles').select('prefer_gemini').eq('id', authUser.id).single()
+          if (!error && data && typeof data.prefer_gemini === 'boolean') {
+            setPreferGemini(Boolean(data.prefer_gemini))
+            return
+          }
+        }
+      } catch {}
+      try {
+        const v = localStorage.getItem('preferGemini')
+        if (v !== null && mounted) setPreferGemini(v === 'true')
+      } catch {}
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  // Persist preference
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('preferGemini', preferGemini ? 'true' : 'false')
+    } catch {}
+  }, [preferGemini])
 
   const analyze = async () => {
     if (!file) return
@@ -70,14 +103,33 @@ export default function RecognitionPage() {
     try {
       const form = new FormData()
       form.append('image', file)
-      // Fake staged progress for better UX
       const t1 = setTimeout(() => setProgress(35), 350)
       const t2 = setTimeout(() => setProgress(60), 900)
       const t3 = setTimeout(() => setProgress(85), 1600)
-      const res = await fetch('/api/analyze', { method: 'POST', body: form })
-      if (!res.ok) throw new Error(await res.text())
-  const data = (await res.json()) as Analysis
-  setDatasetResult(data)
+      if (preferGemini) {
+        const res = await fetch('/api/analyze/gemini', { method: 'POST', body: form })
+        clearTimeout(t1)
+        clearTimeout(t2)
+        clearTimeout(t3)
+        if (!res.ok) throw new Error(await res.text())
+        const data = await res.json()
+        const display = data?.raw ?? data?.analysis ?? data
+        setGeminiResult(display)
+        setDatasetResult(null)
+        // eslint-disable-next-line no-console
+        console.log('Gemini analysis result:', display)
+  // store annotation (non-blocking)
+  storeAnnotation(file, display)
+      } else {
+        const res = await fetch('/api/analyze', { method: 'POST', body: form })
+        clearTimeout(t1)
+        clearTimeout(t2)
+        clearTimeout(t3)
+        if (!res.ok) throw new Error(await res.text())
+        const data = (await res.json()) as Analysis
+        setDatasetResult(data)
+        setGeminiResult(null)
+      }
     } catch (e: any) {
       setError(e.message || 'Failed to analyze image')
     } finally {
@@ -109,6 +161,58 @@ export default function RecognitionPage() {
       console.log('Gemini result updated:', geminiResult)
     }
   }, [geminiResult]);
+
+  // Persist user-upload + gemini result to Supabase for dataset building
+  const storeAnnotation = async (file: File, gemini: any) => {
+    try {
+      if (!file) return
+      // compute sha256 of file to deduplicate
+      const ab = await file.arrayBuffer()
+      const digest = await crypto.subtle.digest('SHA-256', ab)
+      const hex = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
+
+      // check for existing annotation by hash
+      const { data: existing } = await supabase.from('annotations').select('id').eq('hash', hex).limit(1).maybeSingle()
+      if (existing) {
+        // already stored
+        // eslint-disable-next-line no-console
+        console.log('Annotation already exists, skipping upload', hex)
+        return
+      }
+
+      // upload to storage bucket 'kolam_images' (ensure bucket exists)
+      const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-z0-9]/gi, '')
+      const path = `${hex}.${ext}`
+      const { error: upErr } = await supabase.storage.from('kolam_images').upload(path, file, { upsert: false })
+      if (upErr && upErr.message && !upErr.message.includes('already exists')) {
+        // eslint-disable-next-line no-console
+        console.warn('upload error', upErr)
+      }
+      const { data: pu } = supabase.storage.from('kolam_images').getPublicUrl(path)
+      const publicUrl = pu?.publicUrl ?? null
+
+      // insert annotation record
+      const userId = (await supabase.auth.getUser()).data.user?.id ?? null
+      const payload = {
+        user_id: userId,
+        url: publicUrl,
+        hash: hex,
+        gemini_result: gemini ?? {},
+        created_at: new Date().toISOString()
+      }
+      const { error: insErr } = await supabase.from('annotations').insert(payload)
+      if (insErr) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to insert annotation', insErr)
+      } else {
+        // eslint-disable-next-line no-console
+        console.log('Annotation stored', hex)
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('storeAnnotation failed', err)
+    }
+  }
 
   // Show loading or nothing while redirecting
   if (!user) {
@@ -145,7 +249,7 @@ export default function RecognitionPage() {
               <div className="space-y-4">
                 <Input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
                 <div className="flex gap-2">
-                  <Button onClick={analyze} disabled={!file || loading}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
+                  <Button onClick={analyze} disabled={!file || loading || !consentGiven}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
                   {file && <Button variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
                   {file && (
                     <Button
@@ -169,6 +273,13 @@ export default function RecognitionPage() {
                     </Button>
                   )}
                 </div>
+                <div className="flex items-start gap-3">
+                  <input id="consent" type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-1 h-4 w-4" />
+                  <label htmlFor="consent" className="text-xs text-muted-foreground max-w-md">
+                    I consent to storing my uploaded images and Gemini analysis results to improve the dataset. See your <a href="/profile" className="underline">Profile settings</a> to change this preference.
+                  </label>
+                </div>
+
                 {preview && (
                   <div className="rounded-lg overflow-hidden border">
                     <Image src={preview} alt="preview" width={600} height={400} className="w-full object-contain max-h-96 bg-muted" />
@@ -211,9 +322,9 @@ export default function RecognitionPage() {
               <CardDescription>Interactive insights</CardDescription>
             </CardHeader>
             <CardContent>
-        {!datasetResult && <p className="text-sm text-muted-foreground">No results yet.</p>}
-        {datasetResult && (
-                <div className="space-y-4">
+  {(!datasetResult && !geminiResult) && <p className="text-sm text-muted-foreground">No results yet.</p>}
+  {datasetResult && (
+    <div className="space-y-4">
                 {datasetResult.classification && (
                     <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/10 to-accent/10">
                       <div className="flex items-center gap-4">
@@ -260,7 +371,7 @@ export default function RecognitionPage() {
                         </div>
                       )}
                       <div className="mt-3 flex gap-2">
-                        {datasetResult.classification.source !== 'gemini' && (
+                        {!preferGemini && datasetResult.classification.source !== 'gemini' && (
                           <Button
                             onClick={async () => {
                               if (!file) return
@@ -286,6 +397,8 @@ export default function RecognitionPage() {
                                 // Log Gemini result for debugging/inspection
                                 // eslint-disable-next-line no-console
                                 console.log('Gemini analysis result:', display)
+                                // store for dataset building (non-blocking)
+                                storeAnnotation(file, display)
                               } catch (e: any) {
                                 setError(e?.message || 'Failed to re-analyze with Gemini')
                               } finally {
@@ -321,8 +434,10 @@ export default function RecognitionPage() {
                       </div>
                     </div>
                   )}
-                  {/* Gemini result displayed below dataset result for comparison */}
-                  {geminiResult && (
+                  
+                </div>
+              )}
+        {geminiResult && (
                     <div className="rounded-2xl border p-4 bg-gradient-to-br from-white/3 to-primary/6 shadow-lg">
                       <div className="flex items-center justify-between">
                         <div className="text-sm uppercase text-muted-foreground">Gemini Analysis</div>
@@ -364,6 +479,38 @@ export default function RecognitionPage() {
                           <div className="text-sm">{geminiResult.explanation}</div>
                         </div>
                       </div>
+                      <div className="mt-3 flex gap-2">
+                        <Button
+                          onClick={async () => {
+                            if (!file) return
+                            setReanalyzing(true)
+                            setProgress(10)
+                            try {
+                              const form = new FormData()
+                              form.append('image', file)
+                              const t1 = setTimeout(() => setProgress(40), 300)
+                              const t2 = setTimeout(() => setProgress(70), 900)
+                              const res = await fetch('/api/analyze', { method: 'POST', body: form })
+                              clearTimeout(t1)
+                              clearTimeout(t2)
+                              if (!res.ok) {
+                                const text = await res.text()
+                                throw new Error(text || 'Dataset reanalysis failed')
+                              }
+                              const data = (await res.json()) as Analysis
+                              setDatasetResult(data)
+                            } catch (e: any) {
+                              setError(e?.message || 'Failed to re-analyze with dataset')
+                            } finally {
+                              setProgress(100)
+                              setReanalyzing(false)
+                            }
+                          }}
+                          disabled={reanalyzing}
+                        >
+                          {reanalyzing ? 'Re-analyzing…' : 'Re-analyze with Dataset'}
+                        </Button>
+                      </div>
                       <div className="mt-3 text-xs text-muted-foreground">Comparison: dataset vs Gemini</div>
                       <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                         <div className="p-2 rounded bg-muted/10">
@@ -377,8 +524,6 @@ export default function RecognitionPage() {
                       </div>
                     </div>
                   )}
-                </div>
-              )}
             </CardContent>
           </Card>
         </div>

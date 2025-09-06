@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { Camera, User, Mail, Edit3, Save, X, Upload, LogOut, ArrowLeft } from "lucide-react";
+import { Camera, User, Mail, Edit3, Save, X, Upload, LogOut, ArrowLeft, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from 'next/image';
 
@@ -19,6 +19,7 @@ export default function ProfilePage() {
   const [username, setUsername] = useState("");
   const [description, setDescription] = useState("");
   const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [preferGemini, setPreferGemini] = useState<boolean>(true)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -31,7 +32,7 @@ export default function ProfilePage() {
     if (user) {
       supabase
         .from("profiles")
-        .select("username, description, profile_image_url")
+    .select("username, description, profile_image_url, prefer_gemini")
         .eq("id", user.id)
         .single()
         .then(({ data }) => {
@@ -39,6 +40,7 @@ export default function ProfilePage() {
             setUsername(data.username || "");
             setDescription(data.description || "");
             setProfileImageUrl(data.profile_image_url || "");
+      if (typeof data.prefer_gemini === 'boolean') setPreferGemini(Boolean(data.prefer_gemini))
           }
         });
     }
@@ -57,6 +59,7 @@ export default function ProfilePage() {
         username,
         description,
         profile_image_url: profileImageUrl,
+  prefer_gemini: preferGemini,
       });
     if (error) setError(error.message);
     else {
@@ -190,6 +193,9 @@ export default function ProfilePage() {
                 <Mail className="w-4 h-4" />
                 <span className="text-sm">{user.email ?? '-'}</span>
               </div>
+              <div className="text-sm text-muted-foreground">
+                Preference: <span className="font-medium">{preferGemini ? 'Gemini-first' : 'Dataset-first'}</span>
+              </div>
               <div className="text-base text-muted-foreground max-w-sm">
                 {description || <span className="italic">No description</span>}
               </div>
@@ -295,6 +301,19 @@ export default function ProfilePage() {
                   className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200" 
                   placeholder="Tell us about yourself"
                 />
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  id="preferGemini"
+                  type="checkbox"
+                  checked={preferGemini}
+                  onChange={(e) => setPreferGemini(e.target.checked)}
+                  className="h-5 w-5 rounded"
+                />
+                <Label htmlFor="preferGemini" className="text-sm font-medium text-foreground">Prefer Gemini-first</Label>
+                <button type="button" aria-label="Preference help" className="ml-1 text-muted-foreground" title="Gemini-first: run Gemini model first and store its answer; Dataset-first: run local dataset heuristics first. Note: our dataset is currently being expanded and trained using user contributions; dataset results may be less accurate until training completes.">
+                  <Info className="w-4 h-4" />
+                </button>
               </div>
               <div>
                 <Label htmlFor="profileImageUrl" className="text-sm font-medium text-foreground mb-2 block">
