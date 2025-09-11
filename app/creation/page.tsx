@@ -114,6 +114,9 @@ const culturalContexts = [
 ];
 
 export default function KolamCreationPage() {
+  // All hooks at top
+  const [authChecked, setAuthChecked] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [variantImage, setVariantImage] = useState<string | null>(null);
   const [form, setForm] = useState({
     kolamType: "",
@@ -132,6 +135,17 @@ export default function KolamCreationPage() {
   const [showKarmaModal, setShowKarmaModal] = useState(false);
   const [karmaPoints, setKarmaPoints] = useState<number | null>(null);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      setUser(data?.user ?? null);
+      setAuthChecked(true);
+      if (!data?.user) {
+        window.location.href = '/signin';
+      }
+    })();
+  }, []);
+
   // On mount, check for variant image from recognition page
   useEffect(() => {
     const img = sessionStorage.getItem("kolam_variant_image");
@@ -143,6 +157,24 @@ export default function KolamCreationPage() {
       sessionStorage.removeItem("kolam_variant_image");
     };
   }, []);
+
+  if (!authChecked) {
+    return (
+      <div>
+        <Navbar />
+        <main className="container py-10">
+          <div className="max-w-md mx-auto text-center">
+            <Card className="p-8 shadow-xl rounded-2xl border bg-card/80 backdrop-blur-sm">
+              <h1 className="text-3xl font-bold text-primary mb-4">Redirecting...</h1>
+              <p className="text-muted-foreground">Please wait while we redirect you to sign in.</p>
+            </Card>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+  if (!user) return null;
 
   // Handle form changes
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
