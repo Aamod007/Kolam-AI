@@ -6,7 +6,7 @@ const nextConfig = {
     }
   },
   images: {
-    domains: ['gcphodfadkaizxrrprjs.supabase.co'],
+  domains: ['gcphodfadkaizxrrprjs.supabase.co', 'lh3.googleusercontent.com'],
   },
 }
 
