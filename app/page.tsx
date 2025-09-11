@@ -1,9 +1,11 @@
+'use client'
 import { Navbar } from '@/components/site/navbar'
 import { Footer } from '@/components/site/footer'
 import { ComingSoonCard } from '@/components/site/coming-soon-card'
 import { Button } from '@/components/ui/button'
 import { FeedbackFloating } from '@/components/site/feedback'
 import { ImagePlus, Boxes, BookOpen, Users, ShieldCheck, Sparkle } from 'lucide-react'
+import { LeaderboardShowcase } from '@/components/home/LeaderboardShowcase';
 import Link from 'next/link'
 
 export default function HomePage() {
@@ -28,11 +30,7 @@ export default function HomePage() {
               </Button>
             </div>
           </div>
-          <div className="rounded-2xl border bg-card p-6 shadow-sm">
-            <div className="aspect-[16/10] rounded-xl bg-gradient-to-br from-rose-100 to-emerald-100 grid place-items-center text-muted-foreground font-medium">
-              Beautiful Kolam patterns, reimagined with AI
-            </div>
-          </div>
+          <LeaderboardShowcase />
         </section>
 
         <section className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -42,10 +40,31 @@ export default function HomePage() {
             <div className="mt-4"><Button asChild><Link href="/recognition">Open</Link></Button></div>
           </div>
 
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold mb-2">AI Kolam Generator</h3>
+            <p className="text-sm text-muted-foreground">Create new Kolam patterns from a style prompt.</p>
+            <div className="mt-4"><Button asChild><Link href="/creation">Open</Link></Button></div>
+          </div>
+
+
+
+          <div className="rounded-xl border bg-card p-6 shadow-sm">
+            <h3 className="text-lg font-semibold mb-2">Kolam Community Hub</h3>
+            <p className="text-sm text-muted-foreground">Share designs, upvote, download SVG/PNG.</p>
+            <div className="mt-4"><Button asChild><Link href="/community">Open</Link></Button></div>
+          </div>
+
+          <div className="rounded-xl border bg-card p-6 shadow-sm flex flex-col items-center">
+            <span className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-yellow-300/80 to-yellow-500/80 shadow-lg border-2 border-yellow-400/60 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trophy w-6 h-6 text-yellow-700 drop-shadow"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+            </span>
+            <h3 className="text-lg font-semibold mb-1">Kolam Leaderboard</h3>
+            <p className="text-sm text-muted-foreground text-center">See top creators by Kolam Karma.</p>
+            <div className="mt-4"><Button asChild><Link href="/leaderboard">View Leaderboard</Link></Button></div>
+          </div>
+
           <ComingSoonCard title="AR Kolam Designer" description="Place Kolams in real-world AR." icon={<ImagePlus className="h-5 w-5" />} />
-          <ComingSoonCard title="AI Kolam Generator" description="Create new Kolam patterns from a style prompt." icon={<Sparkle className="h-5 w-5" />} />
           <ComingSoonCard title="Kolam Heritage Explorer" description="History and cultural significance of Kolams." icon={<BookOpen className="h-5 w-5" />} />
-          <ComingSoonCard title="Kolam Community Hub" description="Share designs, upvote, download SVG/PNG." icon={<Users className="h-5 w-5" />} />
           <ComingSoonCard title="Secure Kolam Auth" description="NFT/Blockchain proof of originality." icon={<ShieldCheck className="h-5 w-5" />} />
         </section>
 

@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { useAuth } from '@/components/site/auth-context'
 import Link from 'next/link'
 import Image from 'next/image';
+import { CommunityPostModal } from '@/components/community/CommunityPostModal';
+import ReactConfetti from 'react-confetti';
 
 type Analysis = {
   grid?: { rows: number; cols: number; dotCount: number }
@@ -18,6 +20,34 @@ type Analysis = {
 }
 
 export default function RecognitionPage() {
+  const [showPostModal, setShowPostModal] = React.useState(false);
+  const [postImage, setPostImage] = React.useState<string | null>(null);
+  const [postDetails, setPostDetails] = React.useState<string | null>(null);
+  const [alreadyPosted, setAlreadyPosted] = React.useState(false);
+  const [karmaPoints, setKarmaPoints] = React.useState<number | null>(null);
+const [showKarmaModal, setShowKarmaModal] = React.useState(false);
+  // ...existing state declarations...
+
+  // Open CommunityPostModal after analysis is complete and user has not already posted
+
+  // ...existing state declarations...
+
+  // Show modal after any successful recognition (dataset or gemini)
+
+
+  // Handler for posting to community
+  async function handlePostToCommunity(description: string) {
+    setAlreadyPosted(true);
+    // Example: send post to API or Supabase
+    try {
+      // Replace with actual post logic
+      // await supabase.from('community_posts').insert({ image: postImage, details: description, user_id: user?.id });
+      // For now, just close modal
+      setShowPostModal(false);
+    } catch (e: any) {
+      // Handle error if needed
+    }
+  }
   const auth = useAuth();
   const user = auth?.user;
   // Curated Kolam facts and quotes (concise, accurate, and respectful)
@@ -52,13 +82,34 @@ export default function RecognitionPage() {
   const [reanalyzing, setReanalyzing] = React.useState(false)
   const [tip, setTip] = React.useState<string | null>(null)
 
+
   const onFile = (f: File | null) => {
     setFile(f)
   setDatasetResult(null)
   setGeminiResult(null)
     setError(null)
     setPreview(f ? URL.createObjectURL(f) : null)
+    setAlreadyPosted(false);
   }
+
+
+  React.useEffect(() => {
+    if ((datasetResult || geminiResult) && preview && !alreadyPosted) {
+      setPostImage(preview);
+      let name = '';
+      let explanation = '';
+      if (geminiResult) {
+        name = geminiResult.kolamTypeNormalized || geminiResult.kolamType || '';
+        explanation = geminiResult.explanation || '';
+      } else if (datasetResult) {
+        name = datasetResult.classification?.label || '';
+        explanation = '';
+      }
+      setPostDetails(`${name}${explanation ? ': ' + explanation : ''}`);
+      setShowPostModal(true);
+    }
+  }, [datasetResult, geminiResult, preview, alreadyPosted]);
+
 
   // Load preference from localStorage
   React.useEffect(() => {
@@ -240,19 +291,22 @@ export default function RecognitionPage() {
         <p className="text-muted-foreground mt-1">Upload a Kolam image. We&#39;ll detect dots, symmetry and classify the style.</p>
 
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
-          <Card>
+          {/* ...existing code... */}
+          <Card className="w-full max-w-md mx-auto sm:max-w-none sm:mx-0">
+            {/* ...existing code... */}
             <CardHeader>
               <CardTitle>Upload</CardTitle>
               <CardDescription>PNG or JPG up to 5MB.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-4 w-full">
                 <Input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
-                <div className="flex gap-2">
-                  <Button onClick={analyze} disabled={!file || loading || !consentGiven}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
-                  {file && <Button variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  <Button className="w-full sm:w-auto" onClick={analyze} disabled={!file || loading || !consentGiven}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
+                  {file && <Button className="w-full sm:w-auto" variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
                   {file && (
                     <Button
+                      className="w-full sm:w-auto"
                       variant="outline"
                       onClick={async () => {
                         setOverlayUrl(null)
@@ -272,6 +326,54 @@ export default function RecognitionPage() {
                       Show detected dots
                     </Button>
                   )}
+                        {/* Try Its Variants button: always shown after analysis */}
+                        {file && (datasetResult || geminiResult) && (
+                          <Button
+                            variant="secondary"
+                            className="ml-2 w-full sm:w-auto relative font-bold bg-teal-600 text-white border border-teal-600 shadow hover:bg-teal-700 hover:shadow-lg transition-transform duration-200"
+                            onClick={async () => {
+                              if (file) {
+                                // Convert file to base64 before storing
+                                const reader = new FileReader();
+                                reader.onloadend = () => {
+                                  const base64 = reader.result as string;
+                                  sessionStorage.setItem('kolam_variant_image', base64);
+                                  window.location.href = '/creation?variant=1';
+                                };
+                                reader.readAsDataURL(file);
+                              } else if (preview) {
+                                // fallback for preview
+                                sessionStorage.setItem('kolam_variant_image', preview);
+                                window.location.href = '/creation?variant=1';
+                              }
+                            }}
+                          >
+                            <span className="relative z-10">Try Its Variants</span>
+                            {/* Sparkle effect */}
+                            <span className="absolute pointer-events-none inset-0 flex justify-center items-center">
+                              {[...Array(8)].map((_, i) => (
+                                <span
+                                  key={i}
+                                  className="absolute rounded-full bg-teal-300 opacity-70"
+                                  style={{
+                                    width: '6px',
+                                    height: '6px',
+                                    top: `${Math.random() * 80 + 10}%`,
+                                    left: `${Math.random() * 80 + 10}%`,
+                                    animation: `sparkle 1.2s linear ${i * 0.15}s infinite`
+                                  }}
+                                />
+                              ))}
+                            </span>
+                            <style>{`
+                              @keyframes sparkle {
+                                0% { opacity: 0.7; transform: scale(1); }
+                                50% { opacity: 1; transform: scale(1.5); }
+                                100% { opacity: 0; transform: scale(0.8); }
+                              }
+                            `}</style>
+                          </Button>
+                        )}
                 </div>
                 <div className="flex items-start gap-3">
                   <input id="consent" type="checkbox" checked={consentGiven} onChange={(e) => setConsentGiven(e.target.checked)} className="mt-1 h-4 w-4" />
@@ -315,8 +417,9 @@ export default function RecognitionPage() {
               </div>
             </CardContent>
           </Card>
-
+          {/* ...existing code... */}
           <Card className="bg-card/60 backdrop-blur">
+            {/* ...existing code... */}
             <CardHeader>
               <CardTitle>Results</CardTitle>
               <CardDescription>Interactive insights</CardDescription>
@@ -324,6 +427,7 @@ export default function RecognitionPage() {
             <CardContent>
   {(!datasetResult && !geminiResult) && <p className="text-sm text-muted-foreground">No results yet.</p>}
   {datasetResult && (
+    
     <div className="space-y-4">
                 {datasetResult.classification && (
                     <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/10 to-accent/10">
@@ -479,7 +583,7 @@ export default function RecognitionPage() {
                   {preview ? (
                     // Use client preview if available
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={preview} alt="preview" className="w-full h-full object-cover" />
+<Image src={preview || '/default-kolam.png'} alt="Kolam preview" width={600} height={400} className="w-full object-contain rounded" />
                   ) : (
                     <div className="text-xs text-muted-foreground px-3">No preview</div>
                   )}
@@ -591,6 +695,82 @@ export default function RecognitionPage() {
             </CardContent>
           </Card>
         </div>
+        {/* CommunityPostModal integration */}
+<CommunityPostModal
+  image={postImage ?? ''}
+  details={postDetails ?? ''}
+  open={showPostModal}
+  onClose={() => setShowPostModal(false)}
+  onPost={async (description) => {
+    try {
+      const user = await supabase.auth.getUser();
+      const userId = user.data?.user?.id;
+      if (!userId) throw new Error('User not logged in');
+
+      // Convert file to base64 before posting
+      let imageBase64 = '';
+      if (file) {
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            resolve(reader.result as string);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } else if (postImage) {
+        imageBase64 = postImage;
+      }
+
+      const res = await fetch('/api/community-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: imageBase64, description, userId })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to post');
+
+      setTimeout(() => {
+        setKarmaPoints(data.karma ?? null);
+        setShowKarmaModal(true);
+      }, 500);
+    } catch (e) {
+      const errMsg = (e instanceof Error) ? e.message : 'Failed to post';
+      alert(errMsg);
+    }
+    setShowPostModal(false);
+  }}
+/>{showKarmaModal && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border relative">
+      <ReactConfetti width={400} height={200} numberOfPieces={100} recycle={false} />
+      <div className="animate-spin-slow mb-4">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" fill="#FFD700" stroke="#F7B500" strokeWidth="4" />
+          <text x="32" y="38" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#fff">10</text>
+        </svg>
+      </div>
+      <h2 className="text-xl font-bold mb-2 text-yellow-700">You earned 10 Kolam Karma!</h2>
+      <p className="mb-2 text-gray-700">Total Kolam Karma: <span className="font-bold text-yellow-700">{karmaPoints ?? '...'}</span></p>
+      <Button onClick={() => setShowKarmaModal(false)} className="mt-2 bg-yellow-500 text-white">Awesome!</Button>
+    </div>
+  </div>
+)}{showKarmaModal && (
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border relative">
+      <ReactConfetti width={400} height={200} numberOfPieces={100} recycle={false} />
+      <div className="animate-spin-slow mb-4">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="32" cy="32" r="30" fill="#FFD700" stroke="#F7B500" strokeWidth="4" />
+          <text x="32" y="38" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#fff">{karmaPoints ?? '...'}</text>
+        </svg>
+      </div>
+      <h2 className="text-xl font-bold mb-2 text-yellow-700">You earned {karmaPoints ?? 0} Kolam Karma!</h2>
+      <p className="mb-2 text-gray-700">Total Kolam Karma: <span className="font-bold text-yellow-700">{karmaPoints ?? '...'}</span></p>
+      <Button onClick={() => setShowKarmaModal(false)} className="mt-2 bg-yellow-500 text-white">Awesome!</Button>
+    </div>
+  </div>
+)}
       </main>
       <Footer />
     </div>
