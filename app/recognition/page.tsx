@@ -388,7 +388,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                     {overlayUrl && (
                       <div className="mt-2">
                         <div className="text-xs text-muted-foreground mb-1">Detected dots overlay</div>
-                        <img src={overlayUrl} alt="overlay" className="w-full object-contain rounded" />
+                        <Image src={overlayUrl} alt="overlay" width={600} height={400} className="w-full object-contain rounded" />
                       </div>
                     )}
                   </div>

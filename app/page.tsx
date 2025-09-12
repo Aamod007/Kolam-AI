@@ -19,7 +19,7 @@ export default function HomePage() {
               Kolam Ai: Digitizing heritage with Ai & Ar
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Upload a Kolam, and our AI reveals its dot grid, symmetry and style. Explore a creative future for this timeless art.
+            Upload a Kolam, and our AI reveals its dot grid, symmetry and style. Explore a creative future for this timeless art.
             </p>
             <div className="mt-6 flex gap-3">
               <Button asChild>
@@ -63,7 +63,14 @@ export default function HomePage() {
             <div className="mt-4"><Button asChild><Link href="/leaderboard">View Leaderboard</Link></Button></div>
           </div>
 
-          <ComingSoonCard title="AR Kolam Designer" description="Place Kolams in real-world AR." icon={<ImagePlus className="h-5 w-5" />} />
+          <div className="rounded-xl border bg-card p-6 shadow-sm flex flex-col items-center">
+            <span className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-300/80 to-blue-500/80 shadow-lg border-2 border-blue-400/60 mb-2">
+              <ImagePlus className="h-5 w-5 text-blue-700" />
+            </span>
+            <h3 className="text-lg font-semibold mb-1">AR Kolam Designer</h3>
+            <p className="text-sm text-muted-foreground text-center">Place Kolams in real-world AR using your phone camera.</p>
+            <div className="mt-4"><Button asChild><Link href="/ar-designer">Try AR Designer</Link></Button></div>
+          </div>
           <ComingSoonCard title="Kolam Heritage Explorer" description="History and cultural significance of Kolams." icon={<BookOpen className="h-5 w-5" />} />
           <ComingSoonCard title="Secure Kolam Auth" description="NFT/Blockchain proof of originality." icon={<ShieldCheck className="h-5 w-5" />} />
         </section>
