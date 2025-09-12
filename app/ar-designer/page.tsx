@@ -73,6 +73,38 @@ export default function ARKolamDesigner() {
     setLoading(false);
   }
 
+  // Detect desktop/laptop
+  const [isMobile, setIsMobile] = useState<null | boolean>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ua = navigator.userAgent.toLowerCase();
+      setIsMobile(/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua));
+    }
+  }, []);
+
+  if (isMobile === null) {
+    // Render nothing or a loading spinner until device type is known
+    return null;
+  }
+
+  if (!isMobile) {
+    return (
+      <div>
+        <Navbar />
+        <main className="container py-12">
+          <h1 className="text-3xl font-bold mb-4">AR Kolam Designer 🪄</h1>
+          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-8 rounded">
+            <b>Kolam AR is only available on mobile devices.</b><br />
+            Please use your phone or tablet to place Kolam designs in Augmented Reality.<br />
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Mobile UI
   return (
     <div>
       <Navbar />
