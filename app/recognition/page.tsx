@@ -202,8 +202,9 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
   // store annotation (non-blocking)
   storeAnnotation(file, display)
       } else {
-        // Step 1: Use new backend endpoint
-        const res = await fetch('https://kolam-backend-2.onrender.com/analyze', { method: 'POST', body: form })
+  // Use environment variable for backend endpoint
+  const backendUrl = process.env.NEXT_PUBLIC_KOLAM_BACKEND_URL || 'https://kolambackend.onrender.com';
+  const res = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: form })
         clearTimeout(t1)
         clearTimeout(t2)
         clearTimeout(t3)
@@ -693,7 +694,8 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                       form.append('image', file);
                       const t1 = setTimeout(() => setProgress(40), 300);
                       const t2 = setTimeout(() => setProgress(70), 900);
-                      const res = await fetch('https://kolam-backend-2.onrender.com/analyze', { method: 'POST', body: form });
+                      const backendUrl = process.env.NEXT_PUBLIC_KOLAM_BACKEND_URL || 'https://kolambackend.onrender.com';
+                      const res = await fetch(`${backendUrl}/analyze`, { method: 'POST', body: form });
                       clearTimeout(t1);
                       clearTimeout(t2);
                       if (!res.ok) {
