@@ -7,14 +7,16 @@ export const dynamic = 'force-dynamic'
 // Return a PNG with detected dot centroids drawn as red circles.
 export async function POST(req: NextRequest) {
   try {
-    const form = await req.formData()
-    const file = form.get('image') as File | null
-    if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-    const image = await Jimp.read(buffer)
-    image.grayscale()
-    const { width, height } = image.bitmap
+  const form = await req.formData()
+  const file = form.get('image') as File | null
+  if (!file) return NextResponse.json({ error: 'No file' }, { status: 400 })
+  // Check if client requests JSON only (for dot data)
+  const wantJson = form.get('json') === '1'
+  const arrayBuffer = await file.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+  const image = await Jimp.read(buffer)
+  image.grayscale()
+  const { width, height } = image.bitmap
 
     // Histogram + Otsu-like threshold (matching main analyzer)
     const hist = new Array<number>(256).fill(0)
@@ -102,6 +104,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (wantJson) {
+      // Return dot data as JSON
+      return NextResponse.json({
+        dot_count: centroids.length,
+        centroids: centroids
+      }, { status: 200 })
+    }
+
     // Draw overlay: copy original (colored) and paint red circles at centroids
     const overlay = await Jimp.read(buffer) // original color
     const radius = Math.max(3, Math.round(Math.min(width, height) * 0.01))
@@ -124,12 +134,18 @@ export async function POST(req: NextRequest) {
       if (within(c.x, c.y)) overlay.setPixelColor(white, c.x, c.y)
     }
 
-  const out = await overlay.getBufferAsync(Jimp.MIME_PNG)
-  // Convert Buffer to ArrayBuffer slice for NextResponse typing
-  const ab = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength)
-  const u8 = new Uint8Array(ab)
-  // NextResponse typings can be strict for binary bodies; cast to any to satisfy TS here.
-  return new NextResponse(u8 as any, { status: 200, headers: { 'Content-Type': 'image/png' } })
+    const out = await overlay.getBufferAsync(Jimp.MIME_PNG)
+    // Convert Buffer to ArrayBuffer slice for NextResponse typing
+    const ab = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength)
+    const u8 = new Uint8Array(ab)
+    // Add dot count in custom header
+    return new NextResponse(u8 as any, {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/png',
+        'X-Dot-Count': centroids.length.toString()
+      }
+    })
   } catch (err: any) {
     return NextResponse.json({ error: String(err?.message ?? err) }, { status: 500 })
   }
