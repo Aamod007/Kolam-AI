@@ -92,11 +92,17 @@ export default function ARKolamDesigner() {
     return (
       <div>
         <Navbar />
-        <main className="container py-12">
-          <h1 className="text-3xl font-bold mb-4">AR Kolam Designer 🪄</h1>
-          <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-8 rounded">
-            <b>Kolam AR is only available on mobile devices.</b><br />
-            Please use your phone or tablet to place Kolam designs in Augmented Reality.<br />
+        <main className="container py-12 flex flex-col items-center justify-center">
+          <div className="w-full max-w-md mx-auto">
+            <div className="mb-8 text-center">
+              <h1 className="text-4xl font-bold font-serif text-muted-foreground drop-shadow-xl mb-2 tracking-tight leading-tight">
+                AR Kolam Visualizer 🪄
+              </h1>
+              <p className="text-lg text-muted-foreground font-serif mb-2 drop-shadow">Kolam AR is only available on mobile devices.</p>
+            </div>
+            <div className="bg-gradient-to-br from-cyan-100/80 via-white to-blue-100/80 border border-cyan-300 text-gray-800 p-5 rounded-2xl mb-6 shadow flex flex-col items-center">
+              <span className="text-base font-semibold font-display tracking-tight mb-1">Please use your phone or tablet to place Kolam designs in Augmented Reality.</span>
+            </div>
           </div>
         </main>
         {/* Footer is now handled globally in layout.tsx */}
@@ -106,68 +112,93 @@ export default function ARKolamDesigner() {
 
   // Mobile UI
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 font-display">
       <Navbar />
-      <main className="container py-12">
-        <h1 className="text-3xl font-bold mb-4">AR Kolam Designer 🪄</h1>
-        <p className="mb-6 text-muted-foreground">
-          Upload your Kolam/Rangoli design and place it in AR using your phone&apos;s camera.<br/>
-          <span className="block mt-2 text-sm text-blue-700">For best experience: <b>Android Chrome</b> or iOS Safari.<br/>
-          <b>Floor placement</b> requires ARCore/ARKit/WebXR support.<br/>
-          <b>Marker AR</b> works everywhere: Point your camera at the <a href="https://ar-js-org.github.io/AR.js-Docs/marker-training/examples/hiro-marker.png" target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Hiro marker</a> to see your Kolam appear.</span>
-        </p>
-        <div className="mb-6">
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            className="mb-2"
-            disabled={loading}
-          />
-          {loading && (
-            <div className="text-blue-600 text-sm mb-2">Removing background, please wait…</div>
-          )}
-          {imgError && (
-            <div className="text-red-600 text-sm mb-2">{imgError}</div>
-          )}
-          {kolamImg && (
-            <div className="mb-4">
-              <Image src={kolamImg} alt="Kolam preview" width={300} height={300} className="max-w-xs rounded shadow" />
+      <main className="container py-10 flex flex-col items-center justify-center">
+        <div className="w-full max-w-md mx-auto">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl font-bold font-serif text-muted-foreground drop-shadow-xl mb-2 tracking-tight leading-tight">
+              AR Kolam Visualizer 🪄
+            </h1>
+            <p className="text-lg text-white/80 font-display mb-2 drop-shadow">Upload your Kolam/Rangoli design and place it in AR using your phone&apos;s camera.</p>
+          </div>
+          <div className="bg-gradient-to-br from-cyan-100/80 via-white to-blue-100/80 border border-cyan-300 text-gray-800 p-5 rounded-2xl mb-6 shadow flex flex-col items-center">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="text-base font-semibold font-display tracking-tight">Best Experience</span>
             </div>
-          )}
+            <div className="text-sm font-medium mb-1">Use <span className="text-cyan-700 font-bold">Android Chrome</span> or <span className="text-cyan-700 font-bold">iOS Safari</span></div>
+            <div className="text-sm mb-1"><span className="font-bold text-cyan-700">Floor placement</span> requires ARCore/ARKit/WebXR support.</div>
+            <div className="text-sm"><span className="font-bold text-cyan-700">Marker AR</span> works everywhere: Point your camera at the <a href="https://ar-js-org.github.io/AR.js-Docs/marker-training/examples/hiro-marker.png" target="_blank" rel="noopener noreferrer" className="underline text-cyan-600">Hiro marker</a> to see your Kolam appear.</div>
+          </div>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-6 mb-6 border">
+            <div className="bg-gradient-to-br from-white via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-cyan-950 dark:to-blue-950 rounded-2xl shadow-xl p-6 border border-cyan-200">
+              <label htmlFor="kolam-upload" className="flex items-center gap-2 text-lg font-bold text-cyan-700 mb-4 font-display tracking-tight">
+                <svg className="w-6 h-6 text-cyan-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 16v-8m0 8l-4-4m4 4l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                Upload Kolam Image
+              </label>
+              <input
+                id="kolam-upload"
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                className="w-full border border-cyan-300 rounded-lg px-3 py-2 mb-3 focus-visible:ring-2 focus-visible:ring-cyan-400 transition bg-cyan-50 dark:bg-cyan-950 text-gray-800 dark:text-gray-100"
+                disabled={loading}
+              />
+              {loading && (
+                <div className="flex items-center gap-2 text-cyan-700 text-sm mb-2 animate-pulse font-semibold">
+                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/></svg>
+                  Removing background, please wait…
+                </div>
+              )}
+              {imgError && (
+                <div className="flex items-center gap-2 text-red-600 text-sm mb-2 animate-pulse font-semibold">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/><path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  {imgError}
+                </div>
+              )}
+              {kolamImg && (
+                <div className="mb-4 flex flex-col items-center max-w-full overflow-hidden">
+                  <Image src={kolamImg} alt="Kolam preview" width={300} height={300} className="w-full max-w-xs rounded-xl shadow-lg border-2 border-cyan-300 object-contain" />
+                </div>
+              )}
+              {kolamImg && (
+                <Button
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold text-lg shadow-lg hover:from-cyan-600 hover:to-blue-600 transition-all duration-200 transform hover:scale-105 mt-2"
+                  onClick={async () => {
+                    // Detect iOS (Safari/Chrome)
+                    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    if (isIOS) {
+                      // Always use AR.js for iOS
+                      startKolamARjs(kolamImg);
+                      return;
+                    }
+                    // Try WebXR AR first for non-iOS
+                    let usedWebXR = false;
+                    try {
+                      if ((navigator as any).xr && await (navigator as any).xr.isSessionSupported('immersive-ar')) {
+                        await import('three');
+                        startKolamAR(kolamImg);
+                        usedWebXR = true;
+                      }
+                    } catch (err) {
+                      // WebXR not available or failed
+                    }
+                    if (!usedWebXR) {
+                      // Fallback to AR.js marker AR
+                      startKolamARjs(kolamImg);
+                    }
+                  }}
+                  disabled={false}
+                >
+                  <span className="inline-block mr-2">🪄</span> Start AR Placement
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-        {kolamImg && (
-          <Button
-              onClick={async () => {
-                // Detect iOS (Safari/Chrome)
-                const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-                if (isIOS) {
-                  // Always use AR.js for iOS
-                  startKolamARjs(kolamImg);
-                  return;
-                }
-                // Try WebXR AR first for non-iOS
-                let usedWebXR = false;
-                try {
-                  if ((navigator as any).xr && await (navigator as any).xr.isSessionSupported('immersive-ar')) {
-                    await import('three');
-                    startKolamAR(kolamImg);
-                    usedWebXR = true;
-                  }
-                } catch (err) {
-                  // WebXR not available or failed
-                }
-                if (!usedWebXR) {
-                  // Fallback to AR.js marker AR
-                  startKolamARjs(kolamImg);
-                }
-              }}
-            disabled={false}
-          >
-            Start AR Placement
-          </Button>
-        )}
       </main>
       {/* Footer is now handled globally in layout.tsx */}
     </div>
