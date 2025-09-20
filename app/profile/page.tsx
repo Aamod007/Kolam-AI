@@ -137,15 +137,15 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
-        <Card className="w-full max-w-md p-8 shadow-2xl rounded-3xl border bg-card/80 backdrop-blur-sm text-card-foreground mx-auto text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-            <User className="w-8 h-8 text-primary" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 font-display">
+        <Card className="w-full max-w-md p-8 shadow-2xl rounded-2xl border bg-gradient-to-br from-cyan-100/80 via-white to-blue-100/80 backdrop-blur text-card-foreground mx-auto text-center">
+          <div className="w-16 h-16 rounded-full bg-cyan-200/40 flex items-center justify-center mx-auto mb-4">
+            <User className="w-8 h-8 text-cyan-700" />
           </div>
-          <h2 className="text-2xl font-bold mb-4 text-primary">Not signed in</h2>
-          <p className="mb-6 text-muted-foreground">You must be signed in to view your profile.</p>
+          <h2 className="text-2xl font-bold mb-4 text-cyan-700 font-serif drop-shadow">Not signed in</h2>
+          <p className="mb-6 text-white/80 font-display drop-shadow">You must be signed in to view your profile.</p>
           <Link href="/signin">
-            <Button className="w-full">
+            <Button className="w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 text-white font-bold shadow-lg hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 transform hover:scale-105 rounded-xl">
               Go to Sign In
             </Button>
           </Link>
@@ -155,11 +155,11 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-muted/20 p-4">
-      <Card className="w-full max-w-lg p-8 shadow-2xl rounded-3xl border bg-card/80 backdrop-blur-sm text-card-foreground mx-auto relative">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10 font-display p-4">
+      <Card className="w-full max-w-lg p-8 shadow-2xl rounded-2xl border bg-gradient-to-br from-cyan-100/80 via-white to-blue-100/80 backdrop-blur text-card-foreground mx-auto relative">
         {/* Back button */}
         <button
-          className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors z-10 bg-white/80 dark:bg-gray-900/80 rounded-full p-2 shadow"
+          className="absolute top-4 left-4 flex items-center gap-2 text-muted-foreground hover:text-cyan-700 transition-colors z-10 bg-white/80 dark:bg-gray-900/80 rounded-full p-2 shadow"
           onClick={() => router.push("/")}
           aria-label="Go home"
         >
@@ -170,11 +170,11 @@ export default function ProfilePage() {
           <div className="flex flex-col items-center gap-6">
             {/* Avatar Section */}
             <div className="relative group">
-              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-accent/20 bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center shadow-lg">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-cyan-300 bg-gradient-to-br from-cyan-100/80 to-blue-100/80 flex items-center justify-center shadow-lg">
                 {profileImageUrl ? (
                   <Image src={profileImageUrl} alt="Profile" width={128} height={128} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-5xl text-accent font-bold">
+                  <span className="text-5xl text-cyan-700 font-bold">
                     {username ? username[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : '-')}
                   </span>
                 )}
@@ -186,7 +186,7 @@ export default function ProfilePage() {
 
             {/* Profile Info */}
             <div className="text-center space-y-3">
-              <h1 className="text-3xl font-bold text-foreground">
+              <h1 className="text-3xl font-bold text-cyan-700 font-serif drop-shadow">
                 {username || <span className="italic text-muted-foreground">No username</span>}
               </h1>
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
@@ -204,7 +204,7 @@ export default function ProfilePage() {
             {/* Action Buttons */}
             <div className="w-full space-y-3">
               <Button 
-                className="w-full bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg transition-all duration-200 transform hover:scale-105" 
+                className="w-full bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 text-white font-bold shadow-lg hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 transform hover:scale-105 rounded-xl" 
                 onClick={() => setEditMode(true)}
               >
                 <Edit3 className="w-4 h-4 mr-2" />
@@ -213,7 +213,7 @@ export default function ProfilePage() {
               
               <Button 
                 variant="outline" 
-                className="w-full border-2 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive transition-all duration-200 text-black" 
+                className="w-full border-2 border-cyan-300 text-cyan-700 font-semibold hover:bg-cyan-100 hover:text-cyan-900 hover:border-cyan-400 transition-all duration-200" 
                 onClick={handleSignOut}
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -231,7 +231,7 @@ export default function ProfilePage() {
         ) : (
           <form onSubmit={handleSave} className="space-y-6">
             <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-primary mb-2">Edit Profile</h2>
+              <h2 className="text-3xl font-bold text-cyan-700 font-serif drop-shadow mb-2">Edit Profile</h2>
               <p className="text-muted-foreground">Update your profile information</p>
             </div>
 
@@ -241,11 +241,11 @@ export default function ProfilePage() {
                 className={`relative group cursor-pointer transition-all duration-200 ${uploading ? 'opacity-60 pointer-events-none' : 'hover:scale-105'}`}
                 onClick={triggerFileInput}
               >
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-accent/20 bg-gradient-to-br from-accent/10 to-primary/10 flex items-center justify-center shadow-lg">
+                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-cyan-300 bg-gradient-to-br from-cyan-100/80 to-blue-100/80 flex items-center justify-center shadow-lg">
                   {profileImageUrl ? (
                     <Image src={profileImageUrl} alt="Profile" width={96} height={96} className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-3xl text-accent font-bold">
+                    <span className="text-3xl text-cyan-700 font-bold">
                       {username ? username[0].toUpperCase() : (user.email ? user.email[0].toUpperCase() : '-')}
                     </span>
                   )}
@@ -278,7 +278,7 @@ export default function ProfilePage() {
             {/* Form Fields */}
             <div className="space-y-4">
               <div>
-                <Label htmlFor="username" className="text-sm font-medium text-foreground mb-2 block">
+                <Label htmlFor="username" className="text-sm font-medium text-gray-800 mb-2 block">
                   Username
                 </Label>
                 <Input 
@@ -286,19 +286,19 @@ export default function ProfilePage() {
                   value={username} 
                   onChange={e => setUsername(e.target.value)} 
                   required 
-                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200" 
+                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200 text-gray-800 bg-white" 
                   placeholder="Enter your username"
                 />
               </div>
               <div>
-                <Label htmlFor="description" className="text-sm font-medium text-foreground mb-2 block">
+                <Label htmlFor="description" className="text-sm font-medium text-gray-800 mb-2 block">
                   Description
                 </Label>
                 <Input 
                   id="description" 
                   value={description} 
                   onChange={e => setDescription(e.target.value)} 
-                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200" 
+                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200 text-gray-800 bg-white" 
                   placeholder="Tell us about yourself"
                 />
               </div>
@@ -316,14 +316,14 @@ export default function ProfilePage() {
                 </button>
               </div>
               <div>
-                <Label htmlFor="profileImageUrl" className="text-sm font-medium text-foreground mb-2 block">
+                <Label htmlFor="profileImageUrl" className="text-sm font-medium text-gray-800 mb-2 block">
                   Profile Image URL
                 </Label>
                 <Input 
                   id="profileImageUrl" 
                   value={profileImageUrl} 
                   onChange={e => setProfileImageUrl(e.target.value)} 
-                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200" 
+                  className="h-12 rounded-xl border-2 focus:border-primary transition-colors duration-200 text-gray-800 bg-white" 
                   placeholder="Or paste an image URL"
                 />
               </div>
@@ -340,7 +340,7 @@ export default function ProfilePage() {
             <div className="flex gap-3 pt-2">
               <Button 
                 type="submit" 
-                className="flex-1 h-12 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 shadow-lg transition-all duration-200 transform hover:scale-105" 
+                className="flex-1 h-12 bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 text-white font-bold shadow-lg hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 transform hover:scale-105 rounded-xl" 
                 disabled={loading || uploading}
               >
                 {loading ? (
@@ -358,7 +358,7 @@ export default function ProfilePage() {
               <Button 
                 type="button" 
                 variant="outline" 
-                className="flex-1 h-12 border-2 hover:bg-muted transition-all duration-200" 
+                className="flex-1 h-12 border-2 border-cyan-300 text-cyan-700 font-semibold hover:bg-cyan-100 hover:text-cyan-900 hover:border-cyan-400 transition-all duration-200" 
                 onClick={() => setEditMode(false)} 
                 disabled={loading || uploading}
               >

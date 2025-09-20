@@ -300,45 +300,49 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
   // Show loading or nothing while redirecting
   if (!user) {
     return (
-      <div>
-        <Navbar />
-        <main className="container py-10">
-          <div className="max-w-md mx-auto text-center">
-            <Card className="p-8 shadow-xl rounded-2xl border bg-card/80 backdrop-blur-sm">
-              <h1 className="text-3xl font-bold text-primary mb-4">Redirecting...</h1>
-              <p className="text-muted-foreground">Please wait while we redirect you to sign in.</p>
-            </Card>
+      <main className="min-h-screen flex items-center justify-center font-display">
+        <div className="w-full max-w-md mx-auto p-6">
+          <div className="bg-gradient-to-br from-yellow-100 via-cyan-100 to-blue-100 border border-cyan-300 p-8 rounded-2xl shadow-xl text-center">
+            <h1 className="text-3xl font-bold font-serif text-cyan-700 drop-shadow mb-4">Redirecting…</h1>
+            <p className="text-base text-muted-foreground mb-2">Please wait while we redirect you to sign in.</p>
+            <div className="mt-4 flex justify-center">
+              <svg className="animate-spin h-8 w-8 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+            </div>
           </div>
-        </main>
-        <Footer />
-      </div>
+        </div>
+      </main>
     );
   }
 
   return (
-    <div>
+  <div className="min-h-screen font-display">
       <Navbar />
-      <main className="container py-10">
-        <h1 className="text-3xl font-bold">Kolam Recognition</h1>
-        <p className="text-muted-foreground mt-1">Upload a Kolam image. We&#39;ll detect dots, symmetry and classify the style.</p>
+      <main className="container py-10 flex flex-col items-center justify-center">
+        <h1 className="text-4xl sm:text-5xl font-bold font-serif text-cyan-700 drop-shadow tracking-tight leading-tight text-center">Kolam Recognition</h1>
+        <p className="mt-4 text-lg text-muted-foreground text-center">Upload a Kolam image. We&#39;ll detect dots, symmetry and classify the style.</p>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="mt-8 w-full flex flex-col lg:grid lg:grid-cols-2 gap-8 items-start justify-center">
           {/* ...existing code... */}
-          <Card className="w-full max-w-md mx-auto sm:max-w-none sm:mx-0">
+          <Card className="w-full max-w-md mx-auto sm:max-w-none sm:mx-0 bg-gradient-to-br from-cyan-50 via-white to-blue-50 shadow-xl rounded-2xl border-2 border-cyan-200 relative overflow-visible">
+            {/* Glowing border effect behind content */}
+            <span className="pointer-events-none absolute -inset-1 rounded-3xl -z-10 animate-glow bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 opacity-40 blur-lg"></span>
             {/* ...existing code... */}
             <CardHeader>
-              <CardTitle>Upload</CardTitle>
-              <CardDescription>PNG or JPG up to 5MB.</CardDescription>
+              <CardTitle className="text-cyan-700 font-bold">Upload</CardTitle>
+              <CardDescription className="text-muted-foreground">PNG or JPG up to 5MB.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4 w-full">
-                <Input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+                <Input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0] ?? null)} className="bg-white/80 border-cyan-200 rounded-xl" />
                 <div className="flex flex-col sm:flex-row gap-2 w-full">
-                  <Button className="w-full sm:w-auto" onClick={analyze} disabled={!file || loading || !consentGiven}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
-                  {file && <Button className="w-full sm:w-auto" variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
+                  <Button className="w-full sm:w-auto bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-600 text-white font-bold shadow-lg hover:from-blue-600 hover:to-cyan-500 transition-all duration-200 transform hover:scale-105 rounded-xl" onClick={analyze} disabled={!file || loading || !consentGiven}>{loading ? 'Analyzing…' : 'Analyze'}</Button>
+                  {file && <Button className="w-full sm:w-auto bg-white/80 text-cyan-700 border border-cyan-300 rounded-xl" variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
                   {file && (
                     <Button
-                      className="w-full sm:w-auto"
+                      className="w-full sm:w-auto bg-gradient-to-r from-yellow-100 via-cyan-100 to-blue-100 text-cyan-700 border border-cyan-200 rounded-xl"
                       variant="outline"
                       onClick={async () => {
                         setOverlayUrl(null)
@@ -362,7 +366,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                         {file && (datasetResult || geminiResult) && (
                           <Button
                             variant="secondary"
-                            className="ml-2 w-full sm:w-auto relative font-bold bg-teal-600 text-white border border-teal-600 shadow hover:bg-teal-700 hover:shadow-lg transition-transform duration-200"
+                            className="ml-2 w-full sm:w-auto relative font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 text-white border border-teal-400 shadow hover:bg-teal-500 hover:shadow-lg transition-transform duration-200 rounded-xl"
                             onClick={async () => {
                               if (file) {
                                 // Convert file to base64 before storing
@@ -415,7 +419,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                 </div>
 
                 {preview && (
-                  <div className="rounded-lg overflow-hidden border">
+                  <div className="rounded-lg overflow-hidden border border-cyan-200 bg-white/80">
                     <Image src={preview} alt="preview" width={600} height={400} className="w-full object-contain max-h-96 bg-muted" />
                     {overlayUrl && (
                       <div className="mt-2">
@@ -426,35 +430,42 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                   </div>
                 )}
                 {loading && (
-                  <div className="relative overflow-hidden rounded-xl border bg-card/40">
-                    <div className="absolute inset-0 grid grid-rows-3 gap-2 p-4">
-                      <div className="h-2 shimmer animate-shimmer rounded bg-white/10" />
-                      <div className="h-2 shimmer animate-shimmer rounded bg-white/10" />
-                      <div className="h-2 shimmer animate-shimmer rounded bg-white/10" />
-                    </div>
-                    <div className="relative p-6">
-                      <div className="text-sm text-muted-foreground">Analyzing with AI…</div>
-                      <div className="mt-2 h-2 w-full rounded-full bg-muted overflow-hidden">
-                        <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                  <div className="relative overflow-hidden rounded-xl border-2 border-cyan-300 bg-white/80 shadow-lg">
+                    <div className="relative p-6 flex flex-col items-center">
+                      <svg className="w-6 h-6 text-cyan-500 animate-spin mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                        <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <div className="text-base text-cyan-700 font-semibold animate-pulse">Analyzing with AI…</div>
+                      <div className="mt-2 h-2 w-full rounded-full bg-cyan-100 overflow-hidden">
+                        <div className="h-full bg-cyan-400 transition-all" style={{ width: `${progress}%` }} />
                       </div>
                       {tip && (
-                        <div className="mt-3 text-xs italic text-muted-foreground/90">
+                        <div className="mt-3 text-xs italic text-cyan-700/90 animate-pulse">
                           {tip}
                         </div>
                       )}
                     </div>
                   </div>
                 )}
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {error && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mb-2 animate-pulse font-semibold">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
+                      <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {error}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
           {/* ...existing code... */}
-          <Card className="bg-card/60 backdrop-blur">
+          <Card className="bg-card/60 backdrop-blur border border-cyan-200 shadow-xl rounded-2xl">
             {/* ...existing code... */}
             <CardHeader>
-              <CardTitle>Results</CardTitle>
-              <CardDescription>Interactive insights</CardDescription>
+              <CardTitle className="text-cyan-700 font-bold">Results</CardTitle>
+              <CardDescription className="text-muted-foreground">Interactive insights</CardDescription>
             </CardHeader>
             <CardContent>
   {(!datasetResult && !geminiResult) && <p className="text-sm text-muted-foreground">No results yet.</p>}
@@ -677,7 +688,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
               <div className="flex items-center gap-2">
                 <div className="px-3 py-1 rounded bg-muted/10 text-xs">
                   <div className="font-medium">Dataset</div>
-                  <div className="text-muted-foreground">{datasetResult?.dl_classification ?? datasetResult?.kolam_type ?? '—'}</div>
+                  <div className="text-muted-foreground">{datasetResult?.kolam_type ?? '—'}</div>
                 </div>
                 <div className="px-3 py-1 rounded bg-muted/10 text-xs">
                   <div className="font-medium">Gemini</div>
