@@ -310,7 +310,7 @@ export default function ProfilePage() {
                   onChange={(e) => setPreferGemini(e.target.checked)}
                   className="h-5 w-5 rounded"
                 />
-                <Label htmlFor="preferGemini" className="text-sm font-medium text-foreground">Prefer Gemini-first</Label>
+                <Label htmlFor="preferGemini" className="text-sm font-medium text-gray-800 block">Prefer Gemini-first</Label>
                 <button type="button" aria-label="Preference help" className="ml-1 text-muted-foreground" title="Gemini-first: run Gemini model first and store its answer; Dataset-first: run local dataset heuristics first. Note: our dataset is currently being expanded and trained using user contributions; dataset results may be less accurate until training completes.">
                   <Info className="w-4 h-4" />
                 </button>
