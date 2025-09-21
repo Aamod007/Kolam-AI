@@ -342,7 +342,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                   {file && <Button className="w-full sm:w-auto bg-white/80 text-cyan-700 border border-cyan-300 rounded-xl" variant="ghost" onClick={() => onFile(null)}>Reset</Button>}
                   {file && (
                     <Button
-                      className="w-full sm:w-auto bg-gradient-to-r from-yellow-100 via-cyan-100 to-blue-100 text-cyan-700 border border-cyan-200 rounded-xl"
+                      className="w-full sm:w-auto bg-gradient-to-r from-cyan-200 via-cyan-400 to-blue-400 text-cyan-900 border-2 border-cyan-300 shadow-md hover:from-cyan-300 hover:to-blue-500 font-bold rounded-xl transition-all duration-200"
                       variant="outline"
                       onClick={async () => {
                         setOverlayUrl(null)
@@ -366,7 +366,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                         {file && (datasetResult || geminiResult) && (
                           <Button
                             variant="secondary"
-                            className="ml-2 w-full sm:w-auto relative font-bold bg-gradient-to-r from-teal-400 via-cyan-400 to-blue-500 text-white border border-teal-400 shadow hover:bg-teal-500 hover:shadow-lg transition-transform duration-200 rounded-xl"
+                            className="w-full sm:w-auto relative font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-blue-600 text-white border-2 border-cyan-300 shadow-lg hover:from-blue-500 hover:to-cyan-500 transition-transform duration-200 rounded-xl"
                             onClick={async () => {
                               if (file) {
                                 // Convert file to base64 before storing
@@ -390,7 +390,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                               {[...Array(8)].map((_, i) => (
                                 <span
                                   key={i}
-                                  className="absolute rounded-full bg-teal-300 opacity-70"
+                                  className="absolute rounded-full bg-cyan-300 opacity-80"
                                   style={{
                                     width: '6px',
                                     height: '6px',
@@ -403,9 +403,9 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                             </span>
                             <style>{`
                               @keyframes sparkle {
-                                0% { opacity: 0.7; transform: scale(1); }
-                                50% { opacity: 1; transform: scale(1.5); }
-                                100% { opacity: 0; transform: scale(0.8); }
+                                0% { opacity: 0.8; transform: scale(1); }
+                                40% { opacity: 1; transform: scale(1.7); }
+                                100% { opacity: 0; transform: scale(0.7); }
                               }
                             `}</style>
                           </Button>
@@ -471,54 +471,110 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
   {(!datasetResult && !geminiResult) && <p className="text-sm text-muted-foreground">No results yet.</p>}
   {datasetResult && (
     
-    <div className="space-y-4">
-      {/* Dot Grid */}
-      {datasetResult.dot_grid && (
-        <div className="rounded-xl border p-4 bg-card/50">
-          <div className="text-sm uppercase text-muted-foreground">Dot Grid</div>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Rows: {datasetResult.dot_grid.rows}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Cols: {datasetResult.dot_grid.cols}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Spacing X: {datasetResult.dot_grid.spacing_x}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Spacing Y: {datasetResult.dot_grid.spacing_y}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Regularity: {datasetResult.dot_grid.regularity_score?.toFixed(2)}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Dots: {datasetResult.dot_grid.num_dots}</span>
+  <div className="rounded-2xl border p-4 sm:p-6 bg-gradient-to-br from-white/3 to-primary/6 shadow-lg w-full max-w-full overflow-x-auto">
+  <div className="flex flex-col gap-6">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase text-white mb-1 drop-shadow">Dataset Analysis · Model: Kolam Dataset</div>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl sm:text-3xl font-extrabold leading-tight text-white drop-shadow-lg">{datasetResult.kolam_type ?? 'Unknown'}</h2>
+              <span className="text-sm rounded-full px-2 py-1 drop-shadow font-semibold"
+                style={{
+                  background: 'linear-gradient(90deg, #f3e8ff 0%, #e0e7ff 100%)',
+                  color: '#7c3aed',
+                  boxShadow: '0 1px 8px 0 rgba(124,58,237,0.10)'
+                }}
+              >
+                {datasetResult.dl_classification ?? 'Unknown'}
+              </span>
+            </div>
           </div>
-          {datasetResult.dot_grid.sample_dots && (
-            <div className="mt-2 text-xs text-muted-foreground">Sample dots: {datasetResult.dot_grid.sample_dots.map((d: number[], i: number) => `(${d[0]},${d[1]})`).join(', ')}</div>
-          )}
-        </div>
-      )}
-      {/* Symmetry */}
-      {datasetResult.symmetry && (
-        <div className="rounded-xl border p-4 bg-card/50">
-          <div className="text-sm uppercase text-muted-foreground">Symmetry</div>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Horizontal: {datasetResult.symmetry.horizontal?.toFixed(2)}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Vertical: {datasetResult.symmetry.vertical?.toFixed(2)}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Diagonal: {datasetResult.symmetry.diagonal?.toFixed(2)}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Rotational 90°: {datasetResult.symmetry.rotational_90?.toFixed(2)}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Rotational 180°: {datasetResult.symmetry.rotational_180?.toFixed(2)}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Primary: {datasetResult.symmetry.primary_symmetry}</span>
-            <span className="rounded-full bg-accent/60 px-2 py-0.5">Is Symmetric: {datasetResult.symmetry.is_symmetric ? 'Yes' : 'No'}</span>
+          <div className="hidden sm:flex items-center gap-4">
+            <div className="text-sm text-white font-semibold drop-shadow">Type Confidence</div>
+            <div className="text-lg font-bold text-purple-500 drop-shadow-lg">{typeof datasetResult.type_confidence === 'number' ? `${(datasetResult.type_confidence * 100).toFixed(1)}%` : 'N/A'}</div>
+            <div className="text-sm text-white font-semibold drop-shadow">DL Confidence</div>
+            <div className="text-lg font-bold text-purple-500 drop-shadow-lg">{typeof datasetResult.dl_confidence === 'number' ? `${(datasetResult.dl_confidence * 100).toFixed(1)}%` : 'N/A'}</div>
           </div>
         </div>
-      )}
-      {/* Kolam Type & DL Classification */}
-      <div className="rounded-xl border p-4 bg-gradient-to-br from-primary/10 to-accent/10">
-        <div className="flex flex-col gap-2">
-          <div className="text-sm uppercase text-muted-foreground">Kolam Type</div>
-          <div className="text-xl font-semibold">{datasetResult.kolam_type ?? 'Unknown'}</div>
-          <div className="text-xs text-muted-foreground">Type Confidence: {typeof datasetResult.type_confidence === 'number' ? (datasetResult.type_confidence * 100).toFixed(1) + '%' : 'N/A'}</div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-6 h-6 rounded-full bg-cyan-200 text-cyan-700 grid place-items-center font-bold">●</span>
+              <span className="text-sm font-semibold text-cyan-700">Dot Grid</span>
+            </div>
+            {datasetResult.dot_grid ? (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Rows: {datasetResult.dot_grid.rows}</span>
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Cols: {datasetResult.dot_grid.cols}</span>
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Spacing X: {datasetResult.dot_grid.spacing_x}</span>
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Spacing Y: {datasetResult.dot_grid.spacing_y}</span>
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Regularity: {datasetResult.dot_grid.regularity_score?.toFixed(2)}</span>
+                <span className="rounded-full bg-cyan-200 px-2 py-0.5 text-cyan-900">Dots: {datasetResult.dot_grid.num_dots}</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">No dot grid detected</span>
+            )}
+            {datasetResult.dot_grid?.sample_dots && (
+              <div className="mt-2 text-xs text-muted-foreground">Sample dots: {datasetResult.dot_grid.sample_dots.map((d: number[], i: number) => `(${d[0]},${d[1]})`).join(', ')}</div>
+            )}
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-6 h-6 rounded-full bg-blue-200 text-blue-700 grid place-items-center font-bold">♻</span>
+              <span className="text-sm font-semibold text-blue-700">Symmetry</span>
+            </div>
+            {datasetResult.symmetry ? (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Horizontal: {datasetResult.symmetry.horizontal?.toFixed(2)}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Vertical: {datasetResult.symmetry.vertical?.toFixed(2)}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Diagonal: {datasetResult.symmetry.diagonal?.toFixed(2)}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Rotational 90°: {datasetResult.symmetry.rotational_90?.toFixed(2)}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Rotational 180°: {datasetResult.symmetry.rotational_180?.toFixed(2)}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Primary: {datasetResult.symmetry.primary_symmetry}</span>
+                <span className="rounded-full bg-blue-200 px-2 py-0.5 text-blue-900">Is Symmetric: {datasetResult.symmetry.is_symmetric ? 'Yes' : 'No'}</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">No symmetry detected</span>
+            )}
+          </div>
         </div>
-        <div className="mt-3 flex flex-col gap-2">
-          <div className="text-sm uppercase text-muted-foreground">DL Classification</div>
-          <div className="text-base font-semibold">{datasetResult.dl_classification ?? 'Unknown'}</div>
-          <div className="text-xs text-muted-foreground">DL Confidence: {typeof datasetResult.dl_confidence === 'number' ? (datasetResult.dl_confidence * 100).toFixed(1) + '%' : 'N/A'}</div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-6 h-6 rounded-full bg-yellow-200 text-yellow-700 grid place-items-center font-bold">🔁</span>
+              <span className="text-sm font-semibold text-yellow-700">Repetition Patterns</span>
+            </div>
+            {datasetResult.repetition_patterns ? (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-yellow-900">Has Repetition: {datasetResult.repetition_patterns.has_repetition ? 'Yes' : 'No'}</span>
+                <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-yellow-900">Repetition Score: {datasetResult.repetition_patterns.repetition_score?.toFixed(2)}</span>
+                <span className="rounded-full bg-yellow-200 px-2 py-0.5 text-yellow-900">Tile Size: {datasetResult.repetition_patterns.tile_size?.join(' x ')}</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">No repetition detected</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-block w-6 h-6 rounded-full bg-green-200 text-green-700 grid place-items-center font-bold">🧮</span>
+              <span className="text-sm font-semibold text-green-700">Characteristics</span>
+            </div>
+            {datasetResult.characteristics ? (
+              <div className="flex flex-wrap gap-2 text-sm">
+                <span className="rounded-full bg-green-200 px-2 py-0.5 text-green-900">Edge Pixels: {datasetResult.characteristics.edge_pixels}</span>
+                <span className="rounded-full bg-green-200 px-2 py-0.5 text-green-900">Edge Density: {datasetResult.characteristics.edge_density?.toFixed(4)}</span>
+                <span className="rounded-full bg-green-200 px-2 py-0.5 text-green-900">Contours: {datasetResult.characteristics.num_contours}</span>
+                <span className="rounded-full bg-green-200 px-2 py-0.5 text-green-900">Complexity: {datasetResult.characteristics.complexity}</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground">No characteristics detected</span>
+            )}
+          </div>
         </div>
-        {/* Always show Gemini reanalysis button when datasetResult is present */}
-        <div className="mt-3 flex gap-2">
+        <div className="mt-4 flex gap-2">
           <Button
+            className="button"
+            style={{ width: 'auto', minWidth: 220, background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)', boxShadow: '0 3rem 3rem rgba(6,182,212,0.15), 0 1rem 1rem -0.6rem rgba(59,130,246,0.18)', color: '#111' }}
             onClick={async () => {
               if (!file) return;
               setReanalyzing(true);
@@ -548,38 +604,21 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
             }}
             disabled={reanalyzing}
           >
-            {reanalyzing ? 'Re-analyzing…' : 'Re-analyze with Gemini'}
+            <div className="wrap">
+              <p style={{ color: '#111', fontWeight: 600 }}>
+                <span>✧</span>
+                <span>✦</span>
+                {reanalyzing ? 'Re-analyzing…' : 'Re-analyze with Gemini'}
+              </p>
+            </div>
           </Button>
         </div>
       </div>
-      {/* Repetition Patterns */}
-      {datasetResult.repetition_patterns && (
-        <div className="rounded-xl border p-4 bg-card/50">
-          <div className="text-sm uppercase text-muted-foreground">Repetition Patterns</div>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Has Repetition: {datasetResult.repetition_patterns.has_repetition ? 'Yes' : 'No'}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Repetition Score: {datasetResult.repetition_patterns.repetition_score?.toFixed(2)}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Tile Size: {datasetResult.repetition_patterns.tile_size?.join(' x ')}</span>
-          </div>
-        </div>
-      )}
-      {/* Characteristics */}
-      {datasetResult.characteristics && (
-        <div className="rounded-xl border p-4 bg-card/50">
-          <div className="text-sm uppercase text-muted-foreground">Characteristics</div>
-          <div className="mt-2 flex flex-wrap gap-2 text-sm">
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Edge Pixels: {datasetResult.characteristics.edge_pixels}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Edge Density: {datasetResult.characteristics.edge_density?.toFixed(4)}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Contours: {datasetResult.characteristics.num_contours}</span>
-            <span className="rounded-full bg-secondary/60 px-2 py-0.5">Complexity: {datasetResult.characteristics.complexity}</span>
-          </div>
-        </div>
-      )}
     </div>
               )}
         {geminiResult && (
-          <div className="rounded-2xl border p-4 bg-gradient-to-br from-white/3 to-primary/6 shadow-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="rounded-2xl border p-4 sm:p-6 bg-gradient-to-br from-white/3 to-primary/6 shadow-lg w-full max-w-full overflow-x-auto">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <div className="text-xs uppercase text-muted-foreground mb-1">Gemini Analysis · Model: Gemini</div>
                 {(() => {
@@ -614,7 +653,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-1 flex flex-col items-center gap-3">
+              <div className="flex flex-col items-center gap-3 sm:col-span-1">
                 <div className="rounded-lg overflow-hidden w-40 h-40 flex items-center justify-center bg-muted">
                   {preview ? (
                     // Use client preview if available
@@ -642,7 +681,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
               </div>
 
                 <div className="sm:col-span-2 grid gap-3">
-                <div>
+                <div className="flex flex-col gap-3">
                   <div className="text-sm text-muted-foreground">Principle</div>
                   <div className="text-base font-semibold">{geminiResult.principle ?? '—'}</div>
                 </div>
@@ -685,7 +724,7 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
 
             <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="text-xs text-muted-foreground">Comparison: dataset vs Gemini</div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                 <div className="px-3 py-1 rounded bg-muted/10 text-xs">
                   <div className="font-medium">Dataset</div>
                   <div className="text-muted-foreground">{datasetResult?.kolam_type ?? '—'}</div>
@@ -696,6 +735,8 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                 </div>
                 {/* Always show Dataset reanalysis button when geminiResult is present. */}
                 <Button
+                  className="button"
+                  style={{ width: 'auto', minWidth: 220, background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)', boxShadow: '0 3rem 3rem rgba(6,182,212,0.15), 0 1rem 1rem -0.6rem rgba(59,130,246,0.18)', color: '#111' }}
                   onClick={async () => {
                     if (!file) return;
                     setReanalyzing(true);
@@ -724,7 +765,13 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                   }}
                   disabled={reanalyzing}
                 >
-                  {reanalyzing ? 'Re-analyzing…' : 'Re-analyze with Dataset'}
+                  <div className="wrap">
+                    <p style={{ color: '#111', fontWeight: 600 }}>
+                      <span>✧</span>
+                      <span>✦</span>
+                      {reanalyzing ? 'Re-analyzing…' : 'Re-analyze with Dataset'}
+                    </p>
+                  </div>
                 </Button>
               </div>
             </div>
