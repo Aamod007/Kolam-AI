@@ -105,7 +105,8 @@ export default function HomePage() {
           <KolamCard
             title="Festival Special Kolams 🌸"
             description="AI auto-generates festival-themed Kolams (Diwali, Pongal, Onam). Add a calendar where special Kolams unlock on festival days."
-            buttonText="Coming Soon"
+            buttonText="Open Calendar"
+            buttonHref="/festival-calendar"
             icon={<Sparkle className="h-5 w-5 text-pink-400" />}
             list={["Diwali, Pongal, Onam themes", "Unlock on festival days", "AI-generated designs"]}
           />

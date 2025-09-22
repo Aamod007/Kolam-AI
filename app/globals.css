@@ -39,33 +39,30 @@ body {
   animation: moveDot 6s linear infinite;
 }
 @keyframes moveDot {
-  .button {
-    cursor: pointer;
-    border: solid 1.5px #bfc8d6;
-    border-top: none;
-    border-radius: 12px;
-    position: relative;
-    box-shadow: 0px 1px 4px #bfc8d6a0;
-    transition: all 0.2s ease;
-    padding: 0;
-    min-width: 100px;
-    max-width: 180px;
-    background: none;
+  0%, 100% {
+    top: 10%;
+    right: 10%;
   }
-  .inner {
-    padding: 6px 14px;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-    letter-spacing: 0.2px;
-    border-bottom: solid 1px #bfc8d6;
-    border-radius: 8px;
-    background: linear-gradient(180deg, #e3eafc 0%, #c7d2fe 100%);
-    color: #274472;
-    text-shadow: none;
+  25% {
+    top: 10%;
+    right: calc(100% - 35px);
   }
+  50% {
+    top: calc(100% - 30px);
+    right: calc(100% - 35px);
+  }
+  75% {
+    top: calc(100% - 30px);
+    right: 10%;
+  }
+}
+.outer .card {
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  border: solid 1px #202222;
+  background-size: 20px 20px;
   background: radial-gradient(circle 280px at 0% 0%, #444444, #0c0d0d);
   display: flex;
   align-items: center;
@@ -128,9 +125,11 @@ body {
 
 .sparkle-button .text {
   font-size: 0.95rem;
-  display: flex;
   align-items: center;
   justify-content: center;
+}
+.sparkle-button .text.flex {
+  display: flex;
 }
 
 .sparkle-button svg {
