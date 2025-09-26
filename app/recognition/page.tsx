@@ -509,18 +509,18 @@ const [showKarmaModal, setShowKarmaModal] = React.useState(false);
                   </div>
                 )}
                 {loading && (
-                  <div className="relative overflow-hidden rounded-xl border-2 border-cyan-300 bg-white/80 shadow-lg">
+                  <div className="relative overflow-hidden rounded-xl border-2 border-yellow-400 bg-white/80 shadow-lg">
                     <div className="relative p-6 flex flex-col items-center">
-                      <svg className="w-6 h-6 text-cyan-500 animate-spin mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 text-yellow-500 animate-spin mb-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none" />
                         <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
-                      <div className="text-base text-cyan-700 font-semibold animate-pulse">Analyzing with AI…</div>
-                      <div className="mt-2 h-2 w-full rounded-full bg-cyan-100 overflow-hidden">
-                        <div className="h-full bg-cyan-400 transition-all" style={{ width: `${progress}%` }} />
+                      <div className="text-base text-yellow-700 font-extrabold animate-pulse">Analyzing with AI…</div>
+                      <div className="mt-2 h-2 w-full rounded-full bg-yellow-100 overflow-hidden">
+                        <div className="h-full bg-yellow-400 transition-all" style={{ width: `${progress}%` }} />
                       </div>
                       {tip && (
-                        <div className="mt-3 text-xs italic text-cyan-700/90 animate-pulse">
+                        <div className="mt-3 text-xs italic text-yellow-700/90 font-bold animate-pulse">
                           {tip}
                         </div>
                       )}

@@ -156,18 +156,25 @@ export default function HomePage() {
             list={["History & culture", "Regional styles", "Interactive timeline"]}
           />
           <KolamCard
-            title="Festival Special Kolams 🌸"
-            description="AI auto-generates festival-themed Kolams (Diwali, Pongal, Onam). Add a calendar where special Kolams unlock on festival days."
-            buttonText={<><Sparkle className="h-5 w-5 text-pink-400 mr-2" />Open Calendar</>}
-            buttonHref="/festival-calendar"
-            list={["Diwali, Pongal, Onam themes", "Unlock on festival days", "AI-generated designs"]}
-          />
-          <KolamCard
-            title="Step-by-Step Learning Mode ✏"
+            title="Step-by-Step Learning Mode"
             description="Show animated tutorials: ‘connect dot 1 → dot 2 → …’. Users can learn how to draw Kolams in real life."
             buttonText={<><Boxes className="h-5 w-5 text-green-400 mr-2" />Coming Soon</>}
             buttonHref="#"
             list={["Animated tutorials", "Dot-by-dot guidance", "Learn Kolam drawing"]}
+          />
+          <KolamCard
+            title="Virtual Kolam Competitions"
+            description="Compete in online Kolam contests. AI judges creativity, symmetry, and style. Win badges and showcase your skills!"
+            buttonText={<><ShieldCheck className="h-5 w-5 text-purple-400 mr-2" />Coming Soon</>}
+            buttonHref="#"
+            list={["Online competitions", "AI judging", "Win badges & rewards"]}
+          />
+          <KolamCard
+            title="Interactive Kolam Games"
+            description="Gamify Kolam patterns! Puzzle games, 1v1 Battles Arena, unlock levels, challenge friends, and more."
+            buttonText={<><Sparkle className="h-5 w-5 text-orange-400 mr-2" />Coming Soon</>}
+            buttonHref="#"
+            list={["Puzzle games", "1v1 Battles Arena", "More games coming"]}
           />
         </section>
 
@@ -211,7 +218,23 @@ export default function HomePage() {
               <div className="h-9 w-9 rounded-full bg-green-200 border-2 border-yellow-400 grid place-items-center text-green-600 font-bold shadow-gold">5</div>
               <div>
                 <h4 className="font-bold font-serif text-lg text-yellow-300 drop-shadow-gold">Step-by-Step Learning Mode ✏</h4>
-                <p className="text-sm text-yellow-100 font-serif">Animated tutorials: “connect dot 1 → dot 2 → …”. <span className='italic text-yellow-200'>Learn to draw Kolams in real life, dot-by-dot!</span></p>
+                <p className="text-sm text-yellow-100 font-serif">Animated tutorials: “connect dot 1 → dot 2 → …”. <span className='italic text-yellow-200'>Learn to draw Kolams in real life, dot-by-dot!</span> <span className='font-bold text-yellow-400'>Coming soon!</span></p>
+              </div>
+            </div>
+            {/* Roadmap Item 6 */}
+            <div className="flex items-start gap-4 opacity-90">
+              <div className="h-9 w-9 rounded-full bg-purple-200 border-2 border-yellow-400 grid place-items-center text-purple-600 font-bold shadow-gold">6</div>
+              <div>
+                <h4 className="font-bold font-serif text-lg text-yellow-300 drop-shadow-gold">Virtual Kolam Competitions</h4>
+                <p className="text-sm text-yellow-100 font-serif">Compete in online Kolam contests. <span className='font-bold text-purple-400'>AI judges creativity, symmetry, and style.</span> <span className='italic text-yellow-200'>Win badges and showcase your skills!</span> <span className='font-bold text-yellow-400'>Coming soon!</span></p>
+              </div>
+            </div>
+            {/* Roadmap Item 7 */}
+            <div className="flex items-start gap-4 opacity-90">
+              <div className="h-9 w-9 rounded-full bg-orange-200 border-2 border-yellow-400 grid place-items-center text-orange-600 font-bold shadow-gold">7</div>
+              <div>
+                <h4 className="font-bold font-serif text-lg text-yellow-300 drop-shadow-gold">Interactive Kolam Games</h4>
+                <p className="text-sm text-yellow-100 font-serif">Gamify Kolam patterns! <span className='font-bold text-orange-400'>Puzzle games, 1v1 Battles Arena ,unlock levels, challenge friends, and more.</span> <span className='italic text-yellow-200'>Fun for all ages!</span> <span className='font-bold text-yellow-400'>Coming soon!</span></p>
               </div>
             </div>
           </div>
