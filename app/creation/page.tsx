@@ -494,7 +494,12 @@ export default function KolamCreationPage() {
               <CardContent>
                 {resultImage ? (
                   <div className="flex flex-col items-center gap-4">
-                    <Image src={resultImage} alt="Generated Kolam" width={400} height={400} className="rounded-2xl border-4 border-yellow-400 object-contain max-h-80 w-full bg-yellow-50 shadow-xl" />
+                    {svgRaw ? (
+                      <div className="rounded-2xl border-4 border-yellow-400 overflow-hidden max-h-80 w-full bg-yellow-50 shadow-xl flex items-center justify-center"
+                        dangerouslySetInnerHTML={{ __html: svgRaw }} />
+                    ) : (
+                      <img src={resultImage} alt="Generated Kolam" width={400} height={400} className="rounded-2xl border-4 border-yellow-400 object-contain max-h-80 w-full bg-yellow-50 shadow-xl" />
+                    )}
                     {/* Download Buttons (algorithmic mode) */}
                     {svgRaw && (
                       <div className="flex gap-2 w-full">
