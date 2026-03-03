@@ -131,6 +131,8 @@ export default function KolamCreationPage() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [showKarmaModal, setShowKarmaModal] = useState(false);
   const [karmaPoints, setKarmaPoints] = useState<number | null>(null);
+  const [generationMode, setGenerationMode] = useState<'algorithmic' | 'ai'>('algorithmic');
+  const [metadata, setMetadata] = useState<any>(null);
 
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -195,12 +197,13 @@ export default function KolamCreationPage() {
     }
   };
 
-  // Generate Kolam (text-to-image or image-to-image)
+  // Generate Kolam (algorithmic or AI-assisted)
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     setResultImage(null);
     setResultText(null);
+    setMetadata(null);
     try {
       let response;
       // Randomly select values for any blank field
@@ -221,10 +224,16 @@ export default function KolamCreationPage() {
           body: JSON.stringify({ image: variantImage }),
           headers: { "Content-Type": "application/json" },
         });
-        // Remove only after successful generation
         sessionStorage.removeItem("kolam_variant_image");
+      } else if (generationMode === 'algorithmic') {
+        // ALGORITHMIC generation — uses KolamEngine with L-systems, symmetry transforms
+        response = await fetch("/api/generate-algorithmic", {
+          method: "POST",
+          body: JSON.stringify(filledForm),
+          headers: { "Content-Type": "application/json" },
+        });
       } else {
-        // Text-to-image generation
+        // AI-assisted generation via Gemini
         response = await fetch("/api/generate-kolam", {
           method: "POST",
           body: JSON.stringify(filledForm),
@@ -235,11 +244,7 @@ export default function KolamCreationPage() {
       const data = await response.json();
       setResultImage(data.imageUrl || null);
       setResultText(data.details || null);
-      // Show modal after successful variant recreation
-      if (data.imageUrl && data.details) {
-        setShowPostModal(true);
-      }
-      // Show modal after successful generation
+      if (data.metadata) setMetadata(data.metadata);
       if (data.imageUrl && data.details) {
         setShowPostModal(true);
       }
@@ -315,6 +320,31 @@ export default function KolamCreationPage() {
                 <CardTitle className="text-yellow-700 font-extrabold font-serif text-2xl">Kolam Options</CardTitle>
                 <CardDescription className="text-yellow-700 font-bold">Choose design parameters or upload an image.</CardDescription>
               </CardHeader>
+              {/* Generation Mode Toggle */}
+              <div className="px-6 pb-2">
+                <label className="block text-sm font-bold mb-2 text-yellow-700 font-serif">Generation Method</label>
+                <div className="flex gap-1 p-1 rounded-xl bg-yellow-100 border-2 border-yellow-400">
+                  <button type="button" onClick={() => setGenerationMode('algorithmic')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold font-serif transition-all ${generationMode === 'algorithmic'
+                        ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
+                        : 'text-yellow-700 hover:bg-yellow-200'
+                      }`}>
+                    🧮 Algorithmic
+                  </button>
+                  <button type="button" onClick={() => setGenerationMode('ai')}
+                    className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold font-serif transition-all ${generationMode === 'ai'
+                        ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
+                        : 'text-yellow-700 hover:bg-yellow-200'
+                      }`}>
+                    ✨ AI-Assisted
+                  </button>
+                </div>
+                <p className="text-xs mt-1 text-yellow-600 font-serif">
+                  {generationMode === 'algorithmic'
+                    ? '🧮 Uses L-systems, symmetry transforms & graph theory — your own algorithms'
+                    : '✨ Uses Gemini AI to generate Kolam images from text prompts'}
+                </p>
+              </div>
               <CardContent>
                 <form className="space-y-4">
                   {/* ...existing code for form fields... */}
@@ -395,7 +425,9 @@ export default function KolamCreationPage() {
               <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{ zIndex: 0 }} />
               <CardHeader>
                 <CardTitle className="font-extrabold font-serif text-yellow-700 text-2xl">Result</CardTitle>
-                <CardDescription className="font-bold text-yellow-700">Generated Kolam and details</CardDescription>
+                <CardDescription className="font-bold text-yellow-700">
+                  {metadata ? `${metadata.template} pattern • ${metadata.dotCount} dots • ${metadata.lineCount} lines` : 'Generated Kolam and details'}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {resultImage ? (
@@ -443,8 +475,37 @@ export default function KolamCreationPage() {
                   <div className="text-yellow-700 text-center font-bold">No Kolam generated yet.</div>
                 )}
                 {resultText && (
-                  <div className="mt-4 p-4 rounded-2xl bg-yellow-50 dark:bg-yellow-900 text-base border-2 border-yellow-400 font-serif" style={{ color: '#FFD700', textShadow: '0 1px 8px rgba(255,215,0,0.5)' }}>
-                    <strong style={{ color: '#FFD700' }}>Details:</strong> {resultText}
+                  <div className="mt-4 p-4 rounded-2xl bg-yellow-50 dark:bg-yellow-900 text-sm border-2 border-yellow-400 font-serif" style={{ color: '#8B6914' }}>
+                    <pre className="whitespace-pre-wrap font-serif" style={{ color: '#5c4a1e' }}>{resultText}</pre>
+                  </div>
+                )}
+                {/* Graph Metrics (algorithmic mode) */}
+                {metadata && (
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-serif">
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{metadata.dotCount}</div>
+                      <div className="text-yellow-600">Dots (Nodes)</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{metadata.lineCount}</div>
+                      <div className="text-yellow-600">Lines (Edges)</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{metadata.isEulerian ? '✅' : '❌'}</div>
+                      <div className="text-yellow-600">Eulerian Path</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{metadata.holeCount}</div>
+                      <div className="text-yellow-600">Closed Loops</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{metadata.connectedComponents}</div>
+                      <div className="text-yellow-600">Components</div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-yellow-100 border border-yellow-300 text-center">
+                      <div className="text-xl font-black text-yellow-700">{(metadata.complexityScore * 100).toFixed(0)}%</div>
+                      <div className="text-yellow-600">{metadata.complexityLabel}</div>
+                    </div>
                   </div>
                 )}
               </CardContent>
