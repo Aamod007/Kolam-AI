@@ -1,31 +1,17 @@
-import React, { useState } from 'react';
-import FestivalCalendar from './FestivalCalendar';
-import { X } from 'lucide-react';
+'use client'
+import FestivalCalendar from './FestivalCalendar'
 
 export default function FestivalCalendarOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
-  if (!open) return null;
-  // Close overlay if clicking outside modal content
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  }
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur"
-      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      onClick={handleBackdropClick}
-    >
-      <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-md" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-        <button
-          className="absolute top-2 right-2 text-gray-500 hover:text-pink-600"
-          onClick={onClose}
-          aria-label="Close"
-        >
-          <X className="w-6 h-6" />
-        </button>
-        <FestivalCalendar />
-      </div>
-    </div>
-  );
+    if (!open) return null
+    return (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="text-xl font-bold font-serif text-yellow-700">Festival Calendar</h2>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+                </div>
+                <FestivalCalendar />
+            </div>
+        </div>
+    )
 }
