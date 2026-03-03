@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/site/auth-context";
-import { supabase } from "@/lib/supabaseClient";
+import { signOut } from "next-auth/react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,19 +30,17 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user) {
-      supabase
-        .from("profiles")
-    .select("username, description, profile_image_url, prefer_gemini")
-        .eq("id", user.id)
-        .single()
-        .then(({ data }) => {
-          if (data) {
+      fetch("/api/user/profile")
+        .then(res => res.json())
+        .then(data => {
+          if (data && !data.message) {
             setUsername(data.username || "");
             setDescription(data.description || "");
             setProfileImageUrl(data.profile_image_url || "");
-      if (typeof data.prefer_gemini === 'boolean') setPreferGemini(Boolean(data.prefer_gemini))
+            if (typeof data.prefer_gemini === 'boolean') setPreferGemini(Boolean(data.prefer_gemini));
           }
-        });
+        })
+        .catch(console.error);
     }
   }, [user]);
 
@@ -52,21 +50,28 @@ export default function ProfilePage() {
     setLoading(true);
     setError("");
     setSuccess("");
-    const { error } = await supabase
-      .from("profiles")
-      .upsert({
-        id: user.id,
-        username,
-        description,
-        profile_image_url: profileImageUrl,
-  prefer_gemini: preferGemini,
+
+    try {
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username,
+          description,
+          profile_image_url: profileImageUrl,
+          prefer_gemini: preferGemini,
+        })
       });
-    if (error) setError(error.message);
-    else {
+
+      if (!res.ok) throw new Error("Failed to update profile");
+
       setSuccess("Profile updated successfully!");
       setEditMode(false);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -78,51 +83,19 @@ export default function ProfilePage() {
       return;
     }
     setUploading(true);
-    
-    // Use consistent filename based on user ID to always update the same file
-    const fileExt = file.name.split('.').pop() || 'jpg';
-    const filePath = `avatars/${user.id}.${fileExt}`;
-    
-    try {
-      // First, list existing files for this user to delete them
-      const { data: existingFiles } = await supabase.storage
-        .from('avatars')
-        .list('avatars', {
-          search: user.id
-        });
-      
-      // Delete all existing avatar files for this user
-      if (existingFiles && existingFiles.length > 0) {
-        const filesToDelete = existingFiles.map(f => `avatars/${f.name}`);
-        await supabase.storage.from('avatars').remove(filesToDelete);
-      }
-      
-      // Upload the new file
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          upsert: true // This should overwrite if file exists
-        });
-        
-      if (uploadError) {
-        setUploadError(uploadError.message);
-        setUploading(false);
-        return;
-      }
-      
-      // Get the public URL
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      if (data?.publicUrl) {
-        setProfileImageUrl(data.publicUrl);
-      } else {
-        setUploadError("Failed to get public URL.");
-      }
-    } catch (error) {
-      setUploadError("Failed to update avatar. Please try again.");
-      console.error('Avatar upload error:', error);
-    }
-    
-    setUploading(false);
+
+    // Convert to Base64 to store in MongoDB instead of Supabase Storage
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64String = event.target?.result as string;
+      setProfileImageUrl(base64String);
+      setUploading(false);
+    };
+    reader.onerror = () => {
+      setUploadError("Failed to read file");
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
   }
 
   function triggerFileInput() {
@@ -130,15 +103,13 @@ export default function ProfilePage() {
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    // Redirect to home page after sign out
-    window.location.href = '/';
+    await signOut({ callbackUrl: '/' });
   }
 
   if (!user) {
     return (
-  <div className="min-h-screen flex flex-col items-center justify-center font-display">
-  <Card className="w-full max-w-md p-8 shadow-2xl rounded-3xl border-2 border-yellow-600 bg-white/95 dark:bg-yellow-900/90 text-yellow-600 dark:text-yellow-200 mx-auto text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center font-display">
+        <Card className="w-full max-w-md p-8 shadow-2xl rounded-3xl border-2 border-yellow-600 bg-white/95 dark:bg-yellow-900/90 text-yellow-600 dark:text-yellow-200 mx-auto text-center">
           <div className="w-16 h-16 rounded-full bg-yellow-300/60 flex items-center justify-center mx-auto mb-4 border-2 border-yellow-600">
             <User className="w-8 h-8 text-yellow-700" />
           </div>
@@ -155,8 +126,8 @@ export default function ProfilePage() {
   }
 
   return (
-  <div className="min-h-screen flex flex-col items-center justify-center font-display p-4">
-  <Card className="w-full max-w-lg p-8 shadow-2xl rounded-3xl border-2 border-yellow-600 bg-white/95 dark:bg-yellow-900/90 text-yellow-600 dark:text-yellow-200 mx-auto relative">
+    <div className="min-h-screen flex flex-col items-center justify-center font-display p-4">
+      <Card className="w-full max-w-lg p-8 shadow-2xl rounded-3xl border-2 border-yellow-600 bg-white/95 dark:bg-yellow-900/90 text-yellow-600 dark:text-yellow-200 mx-auto relative">
         {/* Back button */}
         <button
           className="absolute top-4 left-4 flex items-center gap-2 text-yellow-700 dark:text-yellow-200 hover:text-yellow-900 dark:hover:text-yellow-100 transition-colors z-10 bg-yellow-100/90 dark:bg-yellow-900/90 rounded-full p-2 shadow border border-yellow-600"
@@ -203,17 +174,17 @@ export default function ProfilePage() {
 
             {/* Action Buttons */}
             <div className="w-full space-y-3">
-              <Button 
-                className="w-full bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-700 text-white font-extrabold shadow-lg hover:from-yellow-700 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 rounded-xl" 
+              <Button
+                className="w-full bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-700 text-white font-extrabold shadow-lg hover:from-yellow-700 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 rounded-xl"
                 onClick={() => setEditMode(true)}
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 Edit Profile
               </Button>
-              
-              <Button 
-                variant="outline" 
-                className="w-full border-2 border-yellow-600 text-yellow-700 font-extrabold hover:bg-yellow-100 hover:text-yellow-900 hover:border-yellow-700 transition-all duration-200" 
+
+              <Button
+                variant="outline"
+                className="w-full border-2 border-yellow-600 text-yellow-700 font-extrabold hover:bg-yellow-100 hover:text-yellow-900 hover:border-yellow-700 transition-all duration-200"
                 onClick={handleSignOut}
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -281,12 +252,12 @@ export default function ProfilePage() {
                 <Label htmlFor="username" className="text-sm font-extrabold text-yellow-600 dark:text-yellow-200 mb-2 block">
                   Username
                 </Label>
-                <Input 
-                  id="username" 
-                  value={username} 
-                  onChange={e => setUsername(e.target.value)} 
-                  required 
-                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold" 
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                  required
+                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold"
                   placeholder="Enter your username"
                 />
               </div>
@@ -294,11 +265,11 @@ export default function ProfilePage() {
                 <Label htmlFor="description" className="text-sm font-extrabold text-yellow-600 dark:text-yellow-200 mb-2 block">
                   Description
                 </Label>
-                <Input 
-                  id="description" 
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)} 
-                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold" 
+                <Input
+                  id="description"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold"
                   placeholder="Tell us about yourself"
                 />
               </div>
@@ -319,11 +290,11 @@ export default function ProfilePage() {
                 <Label htmlFor="profileImageUrl" className="text-sm font-extrabold text-yellow-600 dark:text-yellow-200 mb-2 block">
                   Profile Image URL
                 </Label>
-                <Input 
-                  id="profileImageUrl" 
-                  value={profileImageUrl} 
-                  onChange={e => setProfileImageUrl(e.target.value)} 
-                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold" 
+                <Input
+                  id="profileImageUrl"
+                  value={profileImageUrl}
+                  onChange={e => setProfileImageUrl(e.target.value)}
+                  className="h-12 rounded-xl border-2 border-yellow-600 focus:border-yellow-700 transition-colors duration-200 text-yellow-600 dark:text-yellow-200 bg-white dark:bg-yellow-900/80 font-extrabold"
                   placeholder="Or paste an image URL"
                 />
               </div>
@@ -338,9 +309,9 @@ export default function ProfilePage() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
-              <Button 
-                type="submit" 
-                className="flex-1 h-12 bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-700 text-white font-extrabold shadow-lg hover:from-yellow-700 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 rounded-xl" 
+              <Button
+                type="submit"
+                className="flex-1 h-12 bg-gradient-to-r from-yellow-600 via-yellow-500 to-yellow-700 text-white font-extrabold shadow-lg hover:from-yellow-700 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105 rounded-xl"
                 disabled={loading || uploading}
               >
                 {loading ? (
@@ -355,11 +326,11 @@ export default function ProfilePage() {
                   </>
                 )}
               </Button>
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="flex-1 h-12 border-2 border-yellow-600 text-yellow-700 font-extrabold hover:bg-yellow-100 hover:text-yellow-900 hover:border-yellow-700 transition-all duration-200" 
-                onClick={() => setEditMode(false)} 
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 h-12 border-2 border-yellow-600 text-yellow-700 font-extrabold hover:bg-yellow-100 hover:text-yellow-900 hover:border-yellow-700 transition-all duration-200"
+                onClick={() => setEditMode(false)}
                 disabled={loading || uploading}
               >
                 <X className="w-4 h-4 mr-2" />

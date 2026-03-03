@@ -8,11 +8,9 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { CommunityPostModal } from "@/components/community/CommunityPostModal";
 import ReactConfetti from 'react-confetti';
-import { createClient } from '@supabase/supabase-js';
 import { computePHashFromBuffer } from '@/lib/image-hash';
-
-// Initialize Supabase client
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 // Exhaustive Kolam type list
 const kolamTypes = [
   "Pulli Kolam (Dot-Based Kolam)",
@@ -134,16 +132,17 @@ export default function KolamCreationPage() {
   const [showKarmaModal, setShowKarmaModal] = useState(false);
   const [karmaPoints, setKarmaPoints] = useState<number | null>(null);
 
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   useEffect(() => {
-    (async () => {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user ?? null);
+    if (status === "unauthenticated") {
+      router.push("/signin");
+    } else if (status === "authenticated") {
+      setUser(session.user);
       setAuthChecked(true);
-      if (!data?.user) {
-        window.location.href = '/signin';
-      }
-    })();
-  }, []);
+    }
+  }, [status, router]);
 
   // On mount, check for variant image from recognition page
   useEffect(() => {
@@ -278,7 +277,7 @@ export default function KolamCreationPage() {
   };
 
   return (
-  <div className="min-h-screen font-display">
+    <div className="min-h-screen font-display">
       <Navbar />
       <main className="container py-10 flex flex-col items-start justify-start">
         <div className="w-full max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-6xl px-2 md:px-6 lg:px-8 xl:px-12">
@@ -311,7 +310,7 @@ export default function KolamCreationPage() {
           <div className="grid gap-10 lg:grid-cols-2">
             <Card className="bg-gradient-to-br from-[#fffde7] via-[#ffe082] to-[#ffd700] border-4 border-yellow-500 shadow-2xl rounded-3xl relative overflow-hidden">
               {/* Kolam motif background */}
-              <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{zIndex:0}} />
+              <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{ zIndex: 0 }} />
               <CardHeader>
                 <CardTitle className="text-yellow-700 font-extrabold font-serif text-2xl">Kolam Options</CardTitle>
                 <CardDescription className="text-yellow-700 font-bold">Choose design parameters or upload an image.</CardDescription>
@@ -393,7 +392,7 @@ export default function KolamCreationPage() {
             </Card>
             <Card className="bg-gradient-to-br from-[#fffde7] via-[#ffe082] to-[#ffd700] dark:bg-yellow-900 rounded-3xl shadow-2xl border-4 border-yellow-500 relative overflow-hidden">
               {/* Kolam motif background */}
-              <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{zIndex:0}} />
+              <div className="absolute inset-0 pointer-events-none opacity-10 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{ zIndex: 0 }} />
               <CardHeader>
                 <CardTitle className="font-extrabold font-serif text-yellow-700 text-2xl">Result</CardTitle>
                 <CardDescription className="font-bold text-yellow-700">Generated Kolam and details</CardDescription>
@@ -461,8 +460,7 @@ export default function KolamCreationPage() {
           onPost={async (description) => {
             try {
               // Get userId from your auth/session (replace with your logic)
-              const user = await supabase.auth.getUser();
-              const userId = user.data?.user?.id;
+              const userId = (user as any)?.id;
               if (!userId) throw new Error('User not logged in');
 
               // Call API route to handle post logic
@@ -486,23 +484,23 @@ export default function KolamCreationPage() {
             setShowPostModal(false);
           }}
         />
-      {/* Karma Modal */}
-      {showKarmaModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border relative">
-            <ReactConfetti width={400} height={200} numberOfPieces={100} recycle={false} />
-            <div className="animate-spin-slow mb-4">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="32" cy="32" r="30" fill="#FFD700" stroke="#F7B500" strokeWidth="4" />
-                <text x="32" y="38" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#fff">10</text>
-              </svg>
+        {/* Karma Modal */}
+        {showKarmaModal && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+            <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-md flex flex-col items-center border relative">
+              <ReactConfetti width={400} height={200} numberOfPieces={100} recycle={false} />
+              <div className="animate-spin-slow mb-4">
+                <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="32" cy="32" r="30" fill="#FFD700" stroke="#F7B500" strokeWidth="4" />
+                  <text x="32" y="38" textAnchor="middle" fontSize="24" fontWeight="bold" fill="#fff">10</text>
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold mb-2 text-yellow-700">You earned 10 Kolam Karma!</h2>
+              <p className="mb-2 text-gray-700">Total Kolam Karma: <span className="font-bold text-yellow-700">{karmaPoints ?? '...'}</span></p>
+              <Button onClick={() => setShowKarmaModal(false)} className="mt-2 bg-yellow-500 text-white">Awesome!</Button>
             </div>
-            <h2 className="text-xl font-bold mb-2 text-yellow-700">You earned 10 Kolam Karma!</h2>
-            <p className="mb-2 text-gray-700">Total Kolam Karma: <span className="font-bold text-yellow-700">{karmaPoints ?? '...'}</span></p>
-            <Button onClick={() => setShowKarmaModal(false)} className="mt-2 bg-yellow-500 text-white">Awesome!</Button>
           </div>
-        </div>
-      )}
+        )}
       </main>
       {/* Footer is now handled globally in layout.tsx */}
     </div>

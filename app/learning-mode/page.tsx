@@ -1,147 +1,451 @@
-"use client";
-import { useState } from "react";
-import Image from "next/image";
+'use client'
 
+import { useState, useEffect, useCallback } from 'react'
+import { Navbar } from '@/components/site/navbar'
+import { Button } from '@/components/ui/button'
+import { generatePulliKolam, generateSikkuKolam } from '@/lib/kolam-generators'
+import { 
+  getPatternById, 
+  getPatternsByDifficulty, 
+  KOLAM_PATTERNS,
+  type KolamPattern,
+  type PatternStep
+} from '@/lib/kolam-patterns'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { BookOpen, HelpCircle } from 'lucide-react'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
-type Dot = { x: number; y: number };
-type KolamPattern = {
-  dots: Dot[];
-  connections: [number, number][];
-};
-type KolamPatternName = "Square" | "Star" | "Spiral";
+interface Dot {
+  x: number
+  y: number
+}
 
-// Kolam gallery setup (first 10 patterns/images)
-// Images must be served from /public for Next.js static assets
-const KOLAM_GALLERY = Array.from({ length: 10 }, (_, i) => ({
-  id: i,
-  image: `/Kolam19 Images/Kolam19 Images/kolam19-${i}.jpg`,
-}));
+interface Line {
+  from: Dot
+  to: Dot
+}
 
-// Parse dots for first 10 patterns from CSV (manually for demo)
-// Unique pattern for first image, demo grid for others
-// Dots for first image from first row of CSV
+interface KolamData {
+  dots: Dot[]
+  lines: Line[]
+}
 
-// Example: Use first 4 x and next 4 y from second row of CSV
-const kolam1Dots: Dot[] = [
-  { x: 1, y: 0 },
-  { x: 1, y: 0 },
-  { x: 1, y: 0 },
-  { x: 1, y: 0 },
-];
-const kolam1Connections: [number, number][] = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-];
+function LearningCanvas({ 
+  kolamData, 
+  currentStep = 0, 
+  showFull = false,
+  animatedLines = 0 
+}: { 
+  kolamData: KolamData
+  currentStep?: number
+  showFull?: boolean
+  animatedLines?: number
+}) {
+  const [dimensions] = useState({ width: 400, height: 400 })
+  const centerX = dimensions.width / 2
+  const centerY = dimensions.height / 2
+  const scale = 0.9
 
-const KOLAM_PATTERNS: { dots: Dot[]; connections: [number, number][] }[] = [
-  // Pattern 0: Actual CSV dots and sequential connections
-  {
-    dots: kolam1Dots,
-    connections: kolam1Connections,
-  },
-  // Patterns 1-9: Demo grid
-  ...Array.from({ length: 9 }, () => ({
-    dots: [
-      { x: 60, y: 60 }, { x: 80, y: 60 }, { x: 100, y: 60 }, { x: 120, y: 60 }, { x: 140, y: 60 },
-      { x: 60, y: 80 }, { x: 80, y: 80 }, { x: 100, y: 80 }, { x: 120, y: 80 }, { x: 140, y: 80 },
-      { x: 60, y: 100 }, { x: 80, y: 100 }, { x: 100, y: 100 }, { x: 120, y: 100 }, { x: 140, y: 100 },
-      { x: 60, y: 120 }, { x: 80, y: 120 }, { x: 100, y: 120 }, { x: 120, y: 120 }, { x: 140, y: 120 },
-      { x: 60, y: 140 }, { x: 80, y: 140 }, { x: 100, y: 140 }, { x: 120, y: 140 }, { x: 140, y: 140 }
-    ],
-    connections: Array.from({ length: 24 }, (_, i) => [i, i + 1] as [number, number]),
-  })),
-];
-
-export default function LearningModePage() {
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [step, setStep] = useState(0);
-  const { dots, connections } = KOLAM_PATTERNS[selectedIdx];
+  const offsetX = centerX - (280 / 2)
+  const offsetY = centerY - (280 / 2)
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center">
-      <div className="w-full max-w-md bg-white/80 rounded-2xl shadow-xl p-8 flex flex-col items-center border border-cyan-200">
-        <h1 className="text-3xl font-bold mb-4 text-cyan-700 drop-shadow">Step-by-Step Kolam Tutorial</h1>
-        <div className="mb-4 w-full flex flex-col items-center">
-          <div className="bg-yellow-100 border border-yellow-300 rounded-lg px-4 py-2 text-yellow-800 font-semibold text-center shadow">
-            Real Kolam patterns and step-by-step tutorials will be available soon! Please check back for updates.
-          </div>
-        </div>
-        {/* Kolam gallery for selection */}
-        <div className="mb-4 w-full flex flex-col items-center">
-          <div className="grid grid-cols-5 gap-2 mb-2">
-            {KOLAM_GALLERY.map((item, idx) => (
-              <Image
-                key={item.id}
-                src={item.image}
-                alt={`Kolam ${item.id}`}
-                width={64}
-                height={64}
-                className={`rounded border-2 cursor-pointer w-16 h-16 object-contain transition-all ${selectedIdx === idx ? 'border-cyan-500 shadow-lg' : 'border-cyan-200 opacity-70 hover:opacity-100'}`}
-                onClick={() => { setSelectedIdx(idx); setStep(0); }}
-                onError={(e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-                  const target = e.target as HTMLImageElement;
-                  target.onerror = null;
-                  target.src = "/default-profile.png";
-                  target.alt = "Image not found";
-                }}
-              />
-            ))}
-          </div>
-          <span className="text-cyan-600 text-sm mt-2">Click an image to start its tutorial</span>
-        </div>
-        <div className="bg-gradient-to-br from-cyan-200 via-blue-100 to-cyan-100 rounded-xl p-4 mb-6 flex items-center justify-center shadow">
-          <svg width={220} height={220} className="">
-            {/* Draw dots */}
-            {dots.map((dot: Dot, i: number) => (
-              <circle
-                key={i}
-                cx={dot.x}
-                cy={dot.y}
-                r={12}
-                fill="#fff"
-                stroke="#06b6d4"
-                strokeWidth={4}
-                filter="drop-shadow(0 0 4px #38bdf8)"
-              />
-            ))}
-            {/* Draw connections up to current step */}
-            {connections.slice(0, step + 1).map(([from, to]: [number, number], i: number) => (
-              (dots[from] && dots[to]) ? (
+    <div className="relative bg-white rounded-xl shadow-2xl overflow-hidden" 
+         style={{ width: dimensions.width, height: dimensions.height }}>
+      <svg 
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        className="w-full h-full"
+      >
+        {/* Background grid pattern for guidance */}
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#f3f4f6" strokeWidth="0.5"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        {/* Transform for centering */}
+        <g transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}>
+          {/* Draw completed lines */}
+          {showFull 
+            ? kolamData.lines.map((line: Line, idx: number) => (
                 <line
-                  key={i}
-                  x1={dots[from].x}
-                  y1={dots[from].y}
-                  x2={dots[to].x}
-                  y2={dots[to].y}
-                  stroke="#0ea5e9"
-                  strokeWidth={6}
+                  key={idx}
+                  x1={line.from.x}
+                  y1={line.from.y}
+                  x2={line.to.x}
+                  y2={line.to.y}
+                  stroke="#1f2937"
+                  strokeWidth={4}
                   strokeLinecap="round"
-                  opacity={i === step ? 1 : 0.7}
+                  className="transition-all duration-300"
                 />
-              ) : null
-            ))}
-          </svg>
+              ))
+            : kolamData.lines.slice(0, animatedLines).map((line: Line, idx: number) => (
+                <line
+                  key={idx}
+                  x1={line.from.x}
+                  y1={line.from.y}
+                  x2={line.to.x}
+                  y2={line.to.y}
+                  stroke="#1f2937"
+                  strokeWidth={4}
+                  strokeLinecap="round"
+                  className="transition-all duration-300"
+                />
+              ))
+          }
+
+          {/* Draw dots on top */}
+          {kolamData.dots.map((dot: Dot, idx: number) => (
+            <circle
+              key={idx}
+              cx={dot.x}
+              cy={dot.y}
+              r={6}
+              fill="#ef4444"
+              stroke="#fef2f2"
+              strokeWidth={2}
+            />
+          ))}
+        </g>
+      </svg>
+
+      {/* Step indicator */}
+      {animatedLines > 0 && (
+        <div className="absolute top-2 right-2 bg-slate-900/80 text-white px-3 py-1 rounded-full text-sm font-medium">
+          Step {Math.min(currentStep, kolamData.lines.length)} / {kolamData.lines.length}
         </div>
-        <div className="flex gap-4 mb-4">
-          <button
-            className="px-4 py-2 bg-cyan-400 text-white font-semibold rounded-lg shadow hover:bg-cyan-500 transition disabled:opacity-50"
-            onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0}
-          >
-            Previous
-          </button>
-          <button
-            className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg shadow hover:bg-blue-600 transition disabled:opacity-50"
-            onClick={() => setStep((s) => Math.min(connections.length - 1, s + 1))}
-            disabled={step === connections.length - 1}
-          >
-            Next
-          </button>
-        </div>
-        <p className="text-lg text-cyan-700 font-semibold">Step {step + 1} of {connections.length}</p>
-        <p className="mt-2 text-blue-600">Follow the highlighted line to connect the dots and draw your Kolam!</p>
-      </div>
+      )}
     </div>
-  );
+  )
+}
+
+const difficultyColors: Record<string, string> = {
+  beginner: 'bg-green-500',
+  intermediate: 'bg-yellow-500', 
+  advanced: 'bg-orange-500',
+  expert: 'bg-red-500'
+}
+
+export default function LearningModePage() {
+  const [kolamType, setKolamType] = useState<'pulli' | 'sikku'>('pulli')
+  const [gridSize, setGridSize] = useState<number>(3)
+  const [selectedPatternId, setSelectedPatternId] = useState<string>('')
+  const [currentStep, setCurrentStep] = useState(0)
+  const [animatedLines, setAnimatedLines] = useState(0)
+  const [showFullPattern, setShowFullPattern] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [filterMode, setFilterMode] = useState<'simple' | 'database'>('database')
+
+  const selectedPattern = selectedPatternId ? getPatternById(selectedPatternId) : null
+
+  const simpleKolamData = (() => {
+    if (kolamType === 'pulli') {
+      return generatePulliKolam(gridSize, 50)
+    } else {
+      return generateSikkuKolam(gridSize, 50)
+    }
+  })()
+
+  const kolamData = selectedPattern ? {
+    dots: selectedPattern.dots.map(d => ({ x: d.x, y: d.y })),
+    lines: selectedPattern.lines
+  } : simpleKolamData
+
+  const resetAnimation = useCallback(() => {
+    setCurrentStep(0)
+    setAnimatedLines(0)
+    setShowFullPattern(false)
+    setIsPlaying(false)
+  }, [])
+
+  const startAnimation = useCallback(() => {
+    resetAnimation()
+    setIsPlaying(true)
+  }, [resetAnimation])
+
+  useEffect(() => {
+    if (!isPlaying) return
+
+    const totalSteps = selectedPattern?.steps.length || kolamData.lines.length
+    
+    if (currentStep < totalSteps) {
+      const timer = setTimeout(() => {
+        setAnimatedLines(prev => prev + 1)
+        setCurrentStep(prev => prev + 1)
+      }, selectedPattern ? 2000 : 500)
+      return () => clearTimeout(timer)
+    } else {
+      setIsPlaying(false)
+    }
+  }, [currentStep, isPlaying, selectedPattern, kolamData.lines.length])
+
+  const handlePrevStep = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1)
+      setAnimatedLines(prev => Math.max(0, prev - 1))
+    }
+  }
+
+  const handleNextStep = () => {
+    const totalSteps = selectedPattern?.steps.length || kolamData.lines.length
+    if (currentStep < totalSteps) {
+      setCurrentStep(prev => prev + 1)
+      setAnimatedLines(prev => prev + 1)
+    }
+  }
+
+  const handlePatternSelect = (patternId: string) => {
+    setSelectedPatternId(patternId)
+    resetAnimation()
+  }
+
+  const patternsByDifficulty = getPatternsByDifficulty(kolamType === 'pulli' ? 'beginner' : 'intermediate')
+
+  return (
+    <div className="min-h-screen bg-slate-950 font-sans text-slate-100 pb-12">
+      <Navbar />
+
+      <main className="container mx-auto max-w-6xl pt-10 px-4">
+
+        {/* Header Section */}
+        <div className="text-center mb-8 space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <BookOpen className="w-10 h-10 text-amber-400" />
+            <h1 className="text-4xl md:text-5xl font-black font-serif text-amber-400 drop-shadow-md">
+              Step-by-Step Learning
+            </h1>
+          </div>
+          <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+            Learn the ancient art of Kolam dot-by-dot. Watch how the interlaced loops (Sikku) or connecting lines (Pulli) are drawn, then try it yourself!
+          </p>
+        </div>
+
+        {/* Mode Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="bg-slate-900 p-1 rounded-lg flex gap-1">
+            <Button
+              variant={filterMode === 'database' ? 'default' : 'ghost'}
+              onClick={() => { setFilterMode('database'); setSelectedPatternId(''); resetAnimation(); }}
+              className={filterMode === 'database' ? 'bg-amber-500 text-slate-900' : 'text-slate-400'}
+            >
+              📚 Pattern Library
+            </Button>
+            <Button
+              variant={filterMode === 'simple' ? 'default' : 'ghost'}
+              onClick={() => { setFilterMode('simple'); setSelectedPatternId(''); resetAnimation(); }}
+              className={filterMode === 'simple' ? 'bg-amber-500 text-slate-900' : 'text-slate-400'}
+            >
+              🎯 Quick Practice
+            </Button>
+          </div>
+        </div>
+
+        {filterMode === 'database' && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2 justify-center">
+              {KOLAM_PATTERNS.slice(0, 8).map(pattern => (
+                <Button
+                  key={pattern.id}
+                  variant={selectedPatternId === pattern.id ? 'default' : 'outline'}
+                  onClick={() => handlePatternSelect(pattern.id)}
+                  className={`${selectedPatternId === pattern.id ? 'bg-amber-500 text-slate-900' : 'border-slate-700 text-slate-400 hover:bg-slate-800'}`}
+                >
+                  <span className="mr-2">{pattern.name.split(' ')[0]}</span>
+                  <Badge className={`${difficultyColors[pattern.difficulty]} text-white text-xs`}>
+                    {pattern.difficulty}
+                  </Badge>
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-12 gap-8 items-start">
+
+          {/* Left Panel: Controls */}
+          <div className="md:col-span-4 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
+
+            {filterMode === 'simple' ? (
+              <>
+                {/* Type Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-lg text-slate-200">Kolam Style</h3>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-4 h-4 text-slate-500 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-slate-800 border-slate-700 text-slate-200">
+                          <p className="max-w-xs">
+                            <strong>Pulli:</strong> Lines connect directly dot-to-dot.<br />
+                            <strong>Sikku:</strong> Continuous curved lines weave around dots.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={kolamType === 'pulli' ? 'default' : 'outline'}
+                      onClick={() => setKolamType('pulli')}
+                      className={kolamType === 'pulli' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold' : 'border-slate-700 text-slate-400'}
+                    >
+                      Pulli (Lines)
+                    </Button>
+                    <Button
+                      variant={kolamType === 'sikku' ? 'default' : 'outline'}
+                      onClick={() => setKolamType('sikku')}
+                      className={kolamType === 'sikku' ? 'bg-amber-500 hover:bg-amber-600 text-slate-900 font-bold' : 'border-slate-700 text-slate-400'}
+                    >
+                      Sikku (Curves)
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Size Selection */}
+                <div className="space-y-3">
+                  <h3 className="font-bold text-lg text-slate-200">Grid Size</h3>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[3, 5, 7].map(size => (
+                      <Button
+                        key={size}
+                        variant={gridSize === size ? 'default' : 'outline'}
+                        onClick={() => setGridSize(size)}
+                        className={gridSize === size ? 'bg-indigo-500 text-white font-bold' : 'border-slate-700 text-slate-400'}
+                      >
+                        {size}x{size}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : selectedPattern ? (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-bold text-lg text-amber-400 mb-2">{selectedPattern.name}</h3>
+                  <p className="text-sm text-slate-400 mb-2">{selectedPattern.nameTamil}</p>
+                  <div className="flex gap-2">
+                    <Badge className={`${difficultyColors[selectedPattern.difficulty]} text-white`}>
+                      {selectedPattern.difficulty}
+                    </Badge>
+                    <Badge className="bg-purple-600 text-white">
+                      {selectedPattern.gridSize > 0 ? `${selectedPattern.gridSize}x${selectedPattern.gridSize}` : 'Custom'}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300">{selectedPattern.description}</p>
+                <div className="p-3 bg-slate-800 rounded-lg">
+                  <p className="text-xs text-amber-400 font-semibold mb-1">Cultural Significance:</p>
+                  <p className="text-xs text-slate-400">{selectedPattern.culturalSignificance}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <p>Select a pattern from the library above</p>
+              </div>
+            )}
+
+            {/* Instructions */}
+            <div className="p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <h4 className="font-bold text-amber-400 mb-2 text-sm uppercase tracking-wider">How to practice</h4>
+              <ol className="list-decimal list-inside text-sm text-slate-300 space-y-1">
+                <li>Grab paper or chalk</li>
+                <li>Draw the dot grid</li>
+                <li>Press Play to watch</li>
+                <li>Follow step-by-step</li>
+              </ol>
+            </div>
+
+            {/* Playback Controls */}
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Button
+                  onClick={startAnimation}
+                  disabled={isPlaying}
+                  className="flex-1 bg-green-600 hover:bg-green-700"
+                >
+                  {isPlaying ? '▶ Playing...' : '▶ Play'}
+                </Button>
+                <Button
+                  onClick={handlePrevStep}
+                  disabled={currentStep === 0}
+                  variant="outline"
+                  className="border-slate-700"
+                >
+                  ◀
+                </Button>
+                <Button
+                  onClick={handleNextStep}
+                  disabled={currentStep >= (selectedPattern?.steps.length || kolamData.lines.length)}
+                  variant="outline"
+                  className="border-slate-700"
+                >
+                  ▶
+                </Button>
+                <Button
+                  onClick={() => { setShowFullPattern(true); setAnimatedLines(kolamData.lines.length); setCurrentStep(kolamData.lines.length); }}
+                  variant="outline"
+                  className="border-slate-700"
+                >
+                  ⊙
+                </Button>
+                <Button
+                  onClick={resetAnimation}
+                  variant="outline"
+                  className="border-slate-700 text-red-400"
+                >
+                  ↺
+                </Button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right Panel: Canvas */}
+          <div className="md:col-span-8 flex flex-col items-center">
+            <LearningCanvas 
+              kolamData={kolamData}
+              currentStep={currentStep}
+              showFull={showFullPattern}
+              animatedLines={animatedLines}
+            />
+
+            {/* Step Instructions */}
+            {selectedPattern && currentStep > 0 && currentStep <= selectedPattern.steps.length && (
+              <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 max-w-lg w-full">
+                <p className="text-amber-400 font-semibold mb-1">
+                  Step {currentStep}: {selectedPattern.steps[currentStep - 1].instruction}
+                </p>
+                <p className="text-slate-400 text-sm">
+                  {selectedPattern.steps[currentStep - 1].instructionTamil}
+                </p>
+              </div>
+            )}
+
+            {/* Tips */}
+            {selectedPattern && selectedPattern.tips.length > 0 && (
+              <div className="mt-4 p-4 bg-blue-900/30 rounded-lg border border-blue-800 max-w-lg w-full">
+                <p className="text-blue-400 font-semibold text-sm mb-2">💡 Tips:</p>
+                <ul className="text-xs text-blue-200 space-y-1">
+                  {selectedPattern.tips.map((tip, idx) => (
+                    <li key={idx}>• {tip}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+        </div>
+      </main>
+    </div>
+  )
 }

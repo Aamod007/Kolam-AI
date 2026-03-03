@@ -28,89 +28,66 @@ interface LeaderboardUser {
 interface User {
   id: string;
 }
-import { createClient } from '@supabase/supabase-js';
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export function CommunityFeed() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [commentText, setCommentText] = useState<Record<string, string>>({});
-  const [user, setUser] = useState<User | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
-  const [comments, setComments] = useState<Record<string, Array<{username: string, text: string}>>>({});
+  const [comments, setComments] = useState<Record<string, Array<{ username: string, text: string }>>>({});
+  const { data: session } = useSession();
+  const user = session?.user as any;
 
   useEffect(() => {
     async function fetchAll() {
-      // Posts
-      const { data: postsData } = await supabase
-        .from('community_posts')
-        .select('*, profiles(username, profile_image_url, id)')
-        .order('created_at', { ascending: false });
-      setPosts((postsData as Post[]) || []);
-      // Likes
-      const { data: likesData } = await supabase
-        .from('post_likes')
-        .select('post_id');
-      const likesMap: Record<string, number> = {};
-      (likesData || []).forEach((l: any) => {
-        likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1;
-      });
-      setLikes(likesMap);
-      // Comments
-      const { data: commentsData } = await supabase
-        .from('post_comments')
-        .select('post_id, comment, profiles(username)')
-        .order('created_at', { ascending: true });
-      const commentsMap: Record<string, Array<{username: string, text: string}>> = {};
-      (commentsData || []).forEach((c: any) => {
-        if (!commentsMap[c.post_id]) commentsMap[c.post_id] = [];
-        commentsMap[c.post_id].push({ username: c.profiles?.username || "Anonymous", text: c.comment });
-      });
-      setComments(commentsMap);
-      // User
-      const { data } = await supabase.auth.getUser();
-      if (data?.user?.id) setUser({ id: data.user.id });
+      try {
+        const res = await fetch('/api/community-feed');
+        if (res.ok) {
+          const data = await res.json();
+          setPosts(data.posts || []);
+          setLikes(data.likesMap || {});
+          setComments(data.commentsMap || {});
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
     fetchAll();
   }, []);
 
   async function handleLike(postId: string) {
-    if (!user) return alert('Login required');
-    await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id });
-    // Refresh likes
-    const { data: likesData } = await supabase
-      .from('post_likes')
-      .select('post_id');
-    const likesMap: Record<string, number> = {};
-    (likesData || []).forEach((l: any) => {
-      likesMap[l.post_id] = (likesMap[l.post_id] || 0) + 1;
+    if (!user?.id) return alert('Login required');
+    const res = await fetch('/api/community-feed/like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId })
     });
-    setLikes(likesMap);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.likesMap) setLikes(data.likesMap);
+    }
   }
 
   async function handleComment(postId: string) {
-    if (!user) return alert('Login required');
+    if (!user?.id) return alert('Login required');
     const text = commentText[postId];
     if (!text) return;
-    await supabase.from('post_comments').insert({ post_id: postId, user_id: user.id, comment: text });
-    setCommentText({ ...commentText, [postId]: "" });
-    // Refresh comments
-    const { data: commentsData } = await supabase
-      .from('post_comments')
-      .select('post_id, comment, profiles(username)')
-      .order('created_at', { ascending: true });
-    const commentsMap: Record<string, Array<{username: string, text: string}>> = {};
-    (commentsData || []).forEach((c: any) => {
-      if (!commentsMap[c.post_id]) commentsMap[c.post_id] = [];
-      commentsMap[c.post_id].push({ username: c.profiles?.username || "Anonymous", text: c.comment });
+    const res = await fetch('/api/community-feed/comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ postId, comment: text })
     });
-    setComments(commentsMap);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.commentsMap) setComments(data.commentsMap);
+      setCommentText({ ...commentText, [postId]: "" });
+    }
   }
 
   return (
-  <div className="w-full max-w-xs sm:max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-7xl mx-auto px-2 sm:px-4 md:px-8 lg:px-16 xl:px-24">
-      <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-[#8B0000] drop-shadow-xl mb-6 text-center tracking-wide border-b-4 border-yellow-700 pb-2" style={{fontFamily: 'Georgia, serif'}}>Kolam Community Feed 🪔</h2>
+    <div className="w-full max-w-xs sm:max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-7xl mx-auto px-2 sm:px-4 md:px-8 lg:px-16 xl:px-24">
+      <h2 className="text-3xl md:text-4xl font-extrabold font-serif text-[#8B0000] drop-shadow-xl mb-6 text-center tracking-wide border-b-4 border-yellow-700 pb-2" style={{ fontFamily: 'Georgia, serif' }}>Kolam Community Feed 🪔</h2>
       {posts.length === 0 && (
         <div className="rounded-3xl border-2 border-yellow-700 bg-[#fff8e1]/90 p-6 shadow-xl text-center text-[#8B0000] font-serif">No posts yet.</div>
       )}
@@ -122,10 +99,10 @@ export function CommunityFeed() {
           <div className="mt-3 flex items-center gap-3">
             <Link href={`/profile/${post.profiles?.id}`} className="flex items-center gap-2">
               <Image src={post.profiles?.profile_image_url || '/default-profile.png'} alt="Profile" width={32} height={32} className="h-8 w-8 rounded-full border-2 border-yellow-700" />
-              <span className="font-bold font-serif text-[#8B0000] hover:underline" style={{fontFamily: 'Georgia, serif'}}>{post.profiles?.username}</span>
+              <span className="font-bold font-serif text-[#8B0000] hover:underline" style={{ fontFamily: 'Georgia, serif' }}>{post.profiles?.username}</span>
             </Link>
           </div>
-          <div className="text-base text-[#4B2E05] mt-2 mb-3 font-serif drop-shadow" style={{fontFamily: 'Georgia, serif'}}>{post.description}</div>
+          <div className="text-base text-[#4B2E05] mt-2 mb-3 font-serif drop-shadow" style={{ fontFamily: 'Georgia, serif' }}>{post.description}</div>
           <div className="flex flex-wrap gap-2 mb-3 items-center">
             <Button size="sm" className="bg-gradient-to-r from-yellow-600 to-[#8B0000] text-white font-bold shadow hover:from-yellow-700 hover:to-red-800 transition-all duration-200 transform hover:scale-105 border-2 border-yellow-700">
               <span onClick={() => handleLike(post.id)}>👍 Like</span>

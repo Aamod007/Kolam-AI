@@ -1,38 +1,16 @@
 'use client'
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabaseClient';
-
-type AuthContextType = {
-  user: User | null;
-  loading: boolean;
-};
-const AuthContext = createContext<AuthContextType | null>(null);
+import { useSession } from 'next-auth/react';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-    const { data: listener } = supabase.auth.onAuthStateChange((event: string, session: any) => {
-      setUser(session?.user ?? null);
-    });
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  // Now just a passthrough since NextAuthProvider is in layout.tsx
+  return <>{children}</>;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const { data: session, status } = useSession();
+
+  return {
+    user: session?.user ? { ...session.user } : null,
+    loading: status === 'loading',
+  };
 }

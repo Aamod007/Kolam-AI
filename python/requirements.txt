@@ -1,0 +1,30 @@
+# Kolam AI - Python Dependencies
+# For analysis and generation of Kolam patterns
+
+# Core numerical computing
+numpy>=1.24.0
+scipy>=1.10.0
+
+# Computer Vision
+opencv-python>=4.8.0
+
+# Graph analysis
+networkx>=3.1
+
+# Image processing
+Pillow>=10.0.0
+
+# SVG generation
+svgwrite>=3.2.0
+
+# FastAPI for web backend
+fastapi>=0.104.0
+uvicorn>=0.24.0
+python-multipart>=0.0.6
+
+# Machine learning (optional, for enhanced analysis)
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image hashing
+imagehash>=4.3.0

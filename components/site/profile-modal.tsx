@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+
 import { Card } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -18,18 +18,16 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     if (user) {
-      supabase
-        .from('profiles')
-        .select('username, description, profile_image_url')
-        .eq('id', user.id)
-        .single()
-        .then(({ data, error }) => {
+      fetch('/api/user/profile')
+        .then(res => res.json())
+        .then((data) => {
           if (data) {
             setUsername(data.username || '');
             setDescription(data.description || '');
             setProfileImageUrl(data.profile_image_url || '');
           }
-        });
+        })
+        .catch(err => console.error(err));
     }
   }, [user]);
 
@@ -38,17 +36,26 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
     if (!user) return;
     setLoading(true);
     setError('');
-    const { error } = await supabase
-      .from('profiles')
-      .upsert({
-        id: user.id,
-        username,
-        description,
-        profile_image_url: profileImageUrl,
+
+    try {
+      const res = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          description,
+          profile_image_url: profileImageUrl
+        })
       });
-    if (error) setError(error.message);
-    setLoading(false);
-    if (!error) onClose();
+      if (!res.ok) {
+        throw new Error('Failed to update profile');
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Error occurred');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -58,15 +65,15 @@ export function ProfileModal({ onClose }: { onClose: () => void }) {
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <Label htmlFor="username">Username</Label>
-              <Input id="username" value={username} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required />
+            <Input id="username" value={username} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)} required />
           </div>
           <div>
             <Label htmlFor="description">Description</Label>
-              <Input id="description" value={description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)} />
+            <Input id="description" value={description} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDescription(e.target.value)} />
           </div>
           <div>
             <Label htmlFor="profileImageUrl">Profile Image URL</Label>
-              <Input id="profileImageUrl" value={profileImageUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileImageUrl(e.target.value)} />
+            <Input id="profileImageUrl" value={profileImageUrl} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProfileImageUrl(e.target.value)} />
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
           <Button type="submit" className="w-full" disabled={loading}>

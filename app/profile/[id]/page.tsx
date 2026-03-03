@@ -1,10 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react";
-import { createClient } from '@supabase/supabase-js';
 import Image from "next/image";
 import { useParams } from "next/navigation";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export default function UserProfilePage() {
   const { id } = useParams();
@@ -14,19 +11,16 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     async function fetchUserProfile() {
-      const { data: user } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
-        .single();
-      setProfile(user);
-      const { data: userPosts } = await supabase
-        .from('community_posts')
-        .select('id, image_url, description, created_at')
-        .eq('user_id', id)
-        .order('created_at', { ascending: false });
-      setPosts(userPosts || []);
-      setLoading(false);
+      try {
+        const userRes = await fetch(`/api/user/${id}`);
+        if (userRes.ok) setProfile(await userRes.json());
+        const postsRes = await fetch(`/api/user/${id}/posts`);
+        if (postsRes.ok) setPosts(await postsRes.json() || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
     if (id) fetchUserProfile();
   }, [id]);

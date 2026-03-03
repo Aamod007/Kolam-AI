@@ -2,10 +2,7 @@
 import { Navbar } from '@/components/site/navbar';
 import { Footer } from '@/components/site/footer';
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import Image from 'next/image';
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 interface LeaderboardUser {
   id: string;
@@ -18,19 +15,17 @@ export default function LeaderboardPage() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([]);
 
   useEffect(() => {
-    supabase
-      .from('profiles')
-      .select('id, username, profile_image_url, kolam_karma')
-      .not('kolam_karma', 'is', null)
-      .order('kolam_karma', { ascending: false })
-      .then(({ data }) => setLeaderboard((data as LeaderboardUser[]) || []));
+    fetch('/api/leaderboard')
+      .then(res => res.json())
+      .then(data => setLeaderboard(Array.isArray(data) ? data : []))
+      .catch(console.error);
   }, []);
 
   // Responsive top 3 order
-  const [topOrder, setTopOrder] = useState([1,0,2]);
+  const [topOrder, setTopOrder] = useState([1, 0, 2]);
   useEffect(() => {
     function handleResize() {
-      setTopOrder(window.innerWidth < 768 ? [0,1,2] : [1,0,2]);
+      setTopOrder(window.innerWidth < 768 ? [0, 1, 2] : [1, 0, 2]);
     }
     handleResize();
     window.addEventListener('resize', handleResize);
@@ -41,8 +36,8 @@ export default function LeaderboardPage() {
     <div>
       <Navbar />
       <main className="container py-10 relative">
-  {/* Heritage background pattern (optional, can remove if needed) */}
-  {/* <div className="absolute inset-0 -z-10 bg-[url('/kolam.png')] bg-repeat opacity-20 pointer-events-none" /> */}
+        {/* Heritage background pattern (optional, can remove if needed) */}
+        {/* <div className="absolute inset-0 -z-10 bg-[url('/kolam.png')] bg-repeat opacity-20 pointer-events-none" /> */}
         <h1
           className="text-3xl sm:text-4xl md:text-6xl font-extrabold mb-8 text-center tracking-widest uppercase max-w-full break-words mx-auto"
           style={{
@@ -56,9 +51,9 @@ export default function LeaderboardPage() {
         >
           Kolam Leaderboard
         </h1>
-  <div className="rounded-3xl border-4 border-yellow-700 bg-gradient-to-br from-[#fff8e1] to-[#ffe4b5] p-3 sm:p-6 md:p-10 shadow-2xl relative overflow-hidden w-full max-w-full">
+        <div className="rounded-3xl border-4 border-yellow-700 bg-gradient-to-br from-[#fff8e1] to-[#ffe4b5] p-3 sm:p-6 md:p-10 shadow-2xl relative overflow-hidden w-full max-w-full">
           {/* Kolam motif background */}
-          <div className="absolute inset-0 pointer-events-none opacity-15 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{zIndex:0}} />
+          <div className="absolute inset-0 pointer-events-none opacity-15 bg-[url('/kolam-hero.jpg')] bg-repeat" style={{ zIndex: 0 }} />
           {leaderboard.length === 0 && <div className="text-yellow-900 text-lg font-semibold">No leaderboard data.</div>}
           {/* Top 3 users row */}
           {leaderboard.length > 0 && (
@@ -75,7 +70,7 @@ export default function LeaderboardPage() {
                 const icon = pos === 0 ? (
                   <span className="text-3xl font-bold text-yellow-700">★</span>
                 ) : (
-                  <span className="text-lg font-bold text-yellow-700">{pos+1}</span>
+                  <span className="text-lg font-bold text-yellow-700">{pos + 1}</span>
                 );
                 const avatarSize = pos === 0 ? 104 : 80;
                 return (
@@ -87,7 +82,7 @@ export default function LeaderboardPage() {
                           alt="Profile"
                           width={avatarSize}
                           height={avatarSize}
-                          className={`rounded-full object-cover w-full h-full border-2 border-[#8B0000]`} 
+                          className={`rounded-full object-cover w-full h-full border-2 border-[#8B0000]`}
                         />
                       </div>
                       <span className="absolute -top-8 left-1/2 -translate-x-1/2">{icon}</span>
@@ -95,7 +90,7 @@ export default function LeaderboardPage() {
                     <a
                       href={`/profile/${user.id}`}
                       className="font-bold text-base sm:text-lg md:text-xl text-[#8B0000] drop-shadow transition-transform duration-200 hover:scale-110 hover:drop-shadow-lg hover:text-yellow-700 cursor-pointer font-serif max-w-full text-center break-words"
-                      style={{fontFamily: 'Georgia, serif'}}
+                      style={{ fontFamily: 'Georgia, serif' }}
                     >
                       {user.username}
                     </a>
@@ -124,7 +119,7 @@ export default function LeaderboardPage() {
                   <a
                     href={`/profile/${user.id}`}
                     className="font-semibold text-sm sm:text-lg md:text-xl text-[#8B0000] drop-shadow transition-transform duration-200 hover:scale-110 hover:drop-shadow-lg hover:text-yellow-700 cursor-pointer font-serif max-w-full text-center break-words"
-                    style={{fontFamily: 'Georgia, serif'}}
+                    style={{ fontFamily: 'Georgia, serif' }}
                   >
                     {user.username}
                   </a>

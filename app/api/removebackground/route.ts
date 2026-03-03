@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getDb } from '@/lib/mongodb';
 
 export const runtime = 'nodejs';
 
@@ -15,20 +15,10 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Supabase client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const db = await getDb();
+    const keyData = await db.collection('removebg_keys').find({ usage_count: { $lt: 50 } }).sort({ usage_count: -1 }).toArray();
 
-    // Fetch all API keys with usage_count < 50, sorted by usage_count descending
-    const { data: keyData, error: keyError } = await supabase
-      .from('removebg_keys')
-      .select('*')
-      .lt('usage_count', 50)
-      .order('usage_count', { ascending: false });
-
-    if (keyError || !keyData || keyData.length === 0) {
+    if (!keyData || keyData.length === 0) {
       return NextResponse.json({ error: 'No available remove.bg API key.' }, { status: 500 });
     }
 
@@ -51,17 +41,14 @@ export async function POST(req: NextRequest) {
 
       if (response.ok) {
         // Increment usage_count
-        await supabase
-          .from('removebg_keys')
-          .update({ usage_count: apiKeyRow.usage_count + 1 })
-          .eq('id', apiKeyRow.id);
+        await db.collection('removebg_keys').updateOne(
+          { _id: apiKeyRow._id },
+          { $inc: { usage_count: 1 } }
+        );
 
         // Delete key if usage_count reaches 50
         if (apiKeyRow.usage_count + 1 >= 50) {
-          await supabase
-            .from('removebg_keys')
-            .delete()
-            .eq('id', apiKeyRow.id);
+          await db.collection('removebg_keys').deleteOne({ _id: apiKeyRow._id });
         }
 
         const resultBuffer = Buffer.from(await response.arrayBuffer());

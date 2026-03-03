@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/components/site/auth-context'
+import { NextAuthProvider } from '@/components/NextAuthProvider'
 import { Navbar } from '@/components/site/navbar'
 import { Footer } from '@/components/site/footer'
 
@@ -22,12 +23,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           playsInline
           src="/Bg.mp4"
         />
-        <AuthProvider>
-          <div className="flex-1 flex flex-col">
-            {children}
-          </div>
-          <Footer />
-        </AuthProvider>
+        <NextAuthProvider>
+          <AuthProvider>
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+            <Footer />
+          </AuthProvider>
+        </NextAuthProvider>
       </body>
     </html>
   )

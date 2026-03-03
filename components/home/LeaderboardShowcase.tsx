@@ -1,9 +1,6 @@
 'use client'
 import React, { useEffect, useState } from "react";
-import { createClient } from '@supabase/supabase-js';
 import Image from "next/image";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
 export function LeaderboardShowcase() {
   const [posts, setPosts] = useState<any[]>([]);
@@ -13,23 +10,22 @@ export function LeaderboardShowcase() {
   const [topUser, setTopUser] = useState<any>(null);
   useEffect(() => {
     async function fetchTopPosts() {
-      // Get top user from profiles
-      const { data: leaderboard } = await supabase
-        .from('profiles')
-        .select('id, username, profile_image_url, kolam_karma')
-        .not('kolam_karma', 'is', null)
-        .order('kolam_karma', { ascending: false })
-        .limit(1);
-      if (!leaderboard || leaderboard.length === 0) return setLoading(false);
-      setTopUser(leaderboard[0]);
-      // Get their posts
-      const { data: userPosts } = await supabase
-        .from('community_posts')
-        .select('image_url, description')
-        .eq('user_id', leaderboard[0].id)
-        .order('created_at', { ascending: false });
-      setPosts(userPosts || []);
-      setLoading(false);
+      try {
+        const res = await fetch('/api/leaderboard');
+        if (!res.ok) return setLoading(false);
+        const leaderboard = await res.json();
+        if (!leaderboard || leaderboard.length === 0) return setLoading(false);
+        setTopUser(leaderboard[0]);
+
+        const postsRes = await fetch(`/api/user/${leaderboard[0].id}/posts`);
+        if (postsRes.ok) {
+          setPosts(await postsRes.json() || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchTopPosts();
   }, []);
@@ -211,10 +207,10 @@ export function LeaderboardShowcase() {
             {post.description}
           </div>
         </div>
-  <div className="line topl" style={{position:'absolute',top:0,left:0,width:'100%',height:'2px',background:'linear-gradient(90deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)',zIndex:1}}></div>
-  <div className="line leftl" style={{position:'absolute',top:0,left:0,width:'2px',height:'100%',background:'linear-gradient(180deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)',zIndex:1}}></div>
-  <div className="line bottoml" style={{position:'absolute',bottom:0,left:0,width:'100%',height:'2px',background:'linear-gradient(90deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)',zIndex:1}}></div>
-  <div className="line rightl" style={{position:'absolute',top:0,right:0,width:'2px',height:'100%',background:'linear-gradient(180deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)',zIndex:1}}></div>
+        <div className="line topl" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(90deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)', zIndex: 1 }}></div>
+        <div className="line leftl" style={{ position: 'absolute', top: 0, left: 0, width: '2px', height: '100%', background: 'linear-gradient(180deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)', zIndex: 1 }}></div>
+        <div className="line bottoml" style={{ position: 'absolute', bottom: 0, left: 0, width: '100%', height: '2px', background: 'linear-gradient(90deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)', zIndex: 1 }}></div>
+        <div className="line rightl" style={{ position: 'absolute', top: 0, right: 0, width: '2px', height: '100%', background: 'linear-gradient(180deg,rgba(191,163,53,0.7),rgba(38,6,23,0.1) 80%)', zIndex: 1 }}></div>
       </div>
     </div>
   );
