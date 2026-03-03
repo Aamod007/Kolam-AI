@@ -165,15 +165,15 @@ export default function HomePage() {
             <KolamCard
               title="Virtual Kolam Competitions"
               description="Compete in online Kolam contests. AI judges creativity, symmetry, and style. Win badges and showcase your skills!"
-              buttonText={<><ShieldCheck className="h-5 w-5 text-purple-400 mr-2" />Coming Soon</>}
-              buttonHref="#"
+              buttonText={<><ShieldCheck className="h-5 w-5 text-purple-400 mr-2" />Open</>}
+              buttonHref="/competitions"
               list={["Online competitions", "AI judging", "Win badges & rewards"]}
             />
             <KolamCard
               title="Interactive Kolam Games"
               description="Gamify Kolam patterns! Puzzle games, 1v1 Battles Arena, unlock levels, challenge friends, and more."
-              buttonText={<><Sparkle className="h-5 w-5 text-orange-400 mr-2" />Coming Soon</>}
-              buttonHref="#"
+              buttonText={<><Sparkle className="h-5 w-5 text-orange-400 mr-2" />Open</>}
+              buttonHref="/games"
               list={["Puzzle games", "1v1 Battles Arena", "More games coming"]}
             />
           </section>

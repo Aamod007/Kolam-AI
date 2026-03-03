@@ -279,9 +279,10 @@ export default function ProfilePage() {
                   type="checkbox"
                   checked={preferGemini}
                   onChange={(e) => setPreferGemini(e.target.checked)}
-                  className="h-5 w-5 rounded"
+                  className="h-5 w-5 rounded cursor-pointer"
+                  style={{ accentColor: '#b8860b', appearance: 'auto' }}
                 />
-                <Label htmlFor="preferGemini" className="text-sm font-extrabold text-yellow-600 dark:text-yellow-200 block">Prefer Gemini-first</Label>
+                <Label htmlFor="preferGemini" className="text-sm font-extrabold text-yellow-600 dark:text-yellow-200 block cursor-pointer">Prefer Gemini-first</Label>
                 <button type="button" aria-label="Preference help" className="ml-1 text-muted-foreground" title="Gemini-first: run Gemini model first and store its answer; Dataset-first: run local dataset heuristics first. Note: our dataset is currently being expanded and trained using user contributions; dataset results may be less accurate until training completes.">
                   <Info className="w-4 h-4" />
                 </button>

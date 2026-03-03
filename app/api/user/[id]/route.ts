@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> | { id: string } }) {
     try {
-        const { id } = params;
-        if (!id || !ObjectId.isValid(id)) return NextResponse.json({ error: "Invalid ID" }, { status: 400 });
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+        if (!id || !ObjectId.isValid(id)) return NextResponse.json({ error: `Invalid ID: ${id}` }, { status: 400 });
 
         const db = await getDb();
         const user = await db.collection("users").findOne({ _id: new ObjectId(id) });

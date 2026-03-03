@@ -109,9 +109,9 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-  // Ignore tiny noise and very large regions; adapt upper bound to image size
-  const maxSize = Math.min(8000, Math.floor((width * height) / 6))
-  if (size > 12 && size < maxSize) {
+      // Ignore tiny noise and very large regions; adapt upper bound to image size
+      const maxSize = Math.min(8000, Math.floor((width * height) / 6))
+      if (size > 12 && size < maxSize) {
         dotCount++
       }
     }
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
         details = { strategy: 'pHash-NN', similarity: Number(sim.toFixed(3)) }
       }
     }
-  } catch {}
+  } catch { }
 
   // If dataset was unknown or gave low confidence, blend with CV heuristics
   if (confidence < 0.75) {
@@ -216,8 +216,33 @@ export async function POST(req: NextRequest) {
         source: 'gemini',
         details: { apiKeyPresent: true, model: GEMINI_MODEL }
       }
-    } catch {}
+    } catch { }
   }
+
+  // Store analysis result in MongoDB
+  try {
+    const imageHash = (await computePHashFromBuffer(buffer, 32, 8)).toString('hex');
+    const db = (await import('@/lib/mongodb')).getDb;
+    const database = await db();
+
+    // Try to get the current session user
+    let userId = null;
+    try {
+      const { getServerSession } = await import('next-auth/next');
+      const { authOptions } = await import('@/app/api/auth/[...nextauth]/route');
+      const session = await getServerSession(authOptions);
+      userId = (session?.user as any)?.id || null;
+    } catch { }
+
+    await database.collection('user_analyses').insertOne({
+      user_id: userId,
+      image_hash: imageHash,
+      grid: { rows: grid.rows, cols: grid.cols, dotCount },
+      symmetry,
+      classification,
+      created_at: new Date(),
+    });
+  } catch { }
 
   const body: Analysis = {
     grid: { rows: grid.rows, cols: grid.cols, dotCount },

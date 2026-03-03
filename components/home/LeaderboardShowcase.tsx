@@ -50,7 +50,7 @@ export function LeaderboardShowcase() {
       </div>
     </div>
   );
-  if (!posts.length) return (
+  if (!topUser) return (
     <div className="outer flex items-center justify-center">
       <div className="dot"></div>
       <div className="card flex items-center justify-center">
@@ -61,7 +61,7 @@ export function LeaderboardShowcase() {
       </div>
     </div>
   );
-  const post = posts[current];
+  const post = posts.length > 0 ? posts[current] : { description: "Needs to post more Kolams!" };
   return (
     <div
       className="outer flex items-center justify-center"
@@ -153,7 +153,13 @@ export function LeaderboardShowcase() {
                   }
                 }
               `}</style>
-              <Image src={topUser.profile_image_url} alt="Profile" width={40} height={40} className="h-10 w-10 rounded-full border border-yellow-300 shadow object-cover" />
+              {topUser.profile_image_url ? (
+                <Image src={topUser.profile_image_url} alt="Profile" width={40} height={40} className="h-10 w-10 rounded-full border border-yellow-300 shadow object-cover" />
+              ) : (
+                <div className="h-10 w-10 rounded-full border border-yellow-300 shadow bg-gray-700 flex items-center justify-center text-white text-lg font-bold">
+                  {topUser.username?.[0]?.toUpperCase() || '?'}
+                </div>
+              )}
               <div className="flex flex-col items-start justify-center ml-2">
                 <span className="font-semibold text-base text-white drop-shadow-sm mb-0.5 whitespace-nowrap max-w-[120px] overflow-hidden text-ellipsis">{topUser.username}</span>
                 <span className="text-yellow-300 font-bold text-xs px-2 py-0.5 rounded bg-gray-900/60 border border-yellow-300 shadow">{topUser.kolam_karma} Karma</span>
@@ -166,7 +172,7 @@ export function LeaderboardShowcase() {
               className="flex transition-transform duration-700 ease-in-out"
               style={{ width: '100%', maxWidth: 320, minWidth: 200, transform: `translateX(-${current * 100}%)` }}
             >
-              {posts.map((p, idx) => (
+              {posts.length > 0 ? posts.map((p, idx) => (
                 <div key={idx} className="flex-shrink-0 w-full max-w-[320px] flex justify-center items-center">
                   {p.image_url ? (
                     <Image src={p.image_url} alt="Kolam" width={320} height={160} className="rounded-xl border object-contain max-h-40 bg-black" style={{ background: '#222', width: '100%', height: 'auto', maxWidth: 320, maxHeight: 160, border: '2px solid #bfa335', boxShadow: '0 2px 12px 0 #000a' }} />
@@ -176,7 +182,13 @@ export function LeaderboardShowcase() {
                     </div>
                   )}
                 </div>
-              ))}
+              )) : (
+                <div className="flex-shrink-0 w-full max-w-[320px] flex justify-center items-center">
+                  <div className="rounded-xl border bg-black flex items-center justify-center" style={{ width: '100%', maxWidth: 320, height: 160, color: '#888', border: '2px solid #bfa335', boxShadow: '0 2px 12px 0 #000a' }}>
+                    No posts yet
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div
