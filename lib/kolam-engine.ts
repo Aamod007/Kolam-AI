@@ -687,6 +687,40 @@ export class KolamEngine {
         return this.buildPattern(dots, lines, 'lsystem_hilbert', KolamTypeEnum.KAMBI)
     }
 
+    generateKochSnowflake(): KolamPattern {
+        // Koch Snowflake — fractal curve with 60° angles
+        const lsys = new LSystem('F--F--F', { 'F': 'F+F--F+F' }, 60)
+        const iterations = Math.min(4, Math.max(1, this.gridSize - 2))
+        const str = lsys.generate(iterations)
+        const length = this.spacing * 2 / Math.pow(3, iterations)
+        const startX = this.centerX - this.canvasSize * 0.3
+        const startY = this.centerY + this.canvasSize * 0.2
+        const { dots, lines } = lsys.interpret(str, { x: startX, y: startY }, length)
+        return this.buildPattern(dots, lines, 'koch_snowflake', KolamTypeEnum.KAMBI)
+    }
+
+    generateSierpinskiTriangle(): KolamPattern {
+        // Sierpinski Triangle — fractal arrowhead curve
+        const lsys = new LSystem('AF', { 'A': 'BF+AF+BF', 'B': 'AF-BF-AF' }, 60)
+        const iterations = Math.min(5, Math.max(2, this.gridSize - 1))
+        const str = lsys.generate(iterations)
+        const length = this.spacing * 3 / Math.pow(2, iterations)
+        const startX = this.centerX - this.canvasSize * 0.35
+        const startY = this.centerY + this.canvasSize * 0.3
+        const { dots, lines } = lsys.interpret(str, { x: startX, y: startY }, length)
+        return this.buildPattern(dots, lines, 'sierpinski', KolamTypeEnum.KAMBI)
+    }
+
+    generateDragonCurve(): KolamPattern {
+        // Dragon Curve — space-filling fractal with 90° turns
+        const lsys = new LSystem('FX', { 'X': 'X+YF+', 'Y': '-FX-Y' }, 90)
+        const iterations = Math.min(10, Math.max(4, this.gridSize + 3))
+        const str = lsys.generate(iterations)
+        const length = this.spacing * 0.6 / Math.pow(1.4, iterations - 4)
+        const { dots, lines } = lsys.interpret(str, { x: this.centerX, y: this.centerY }, length)
+        return this.buildPattern(dots, lines, 'dragon_curve', KolamTypeEnum.KAMBI)
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Symmetry Transforms
     // ─────────────────────────────────────────────────────────────
@@ -785,6 +819,9 @@ export class KolamEngine {
             case 'spiral': pattern = this.generateSpiral(); break
             case 'mandala': pattern = this.generateMandala(); break
             case 'lsystem': pattern = this.generateLSystemKolam(); break
+            case 'koch': pattern = this.generateKochSnowflake(); break
+            case 'sierpinski': pattern = this.generateSierpinskiTriangle(); break
+            case 'dragon': pattern = this.generateDragonCurve(); break
             default: pattern = this.generatePulli(gridType); break
         }
 
@@ -805,35 +842,77 @@ export class KolamEngine {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // SVG Renderer
+    // SVG Renderer (Advanced with color themes, gradients, animation)
     // ─────────────────────────────────────────────────────────────
 
-    toSVG(pattern: KolamPattern): string {
+    static COLOR_THEMES: Record<string, { bg: string[]; line: string; lineAlt: string; dot: string; dotStroke: string; glow: string }> = {
+        traditional: { bg: ['#FFF8E1', '#FFF3C4'], line: '#8B4513', lineAlt: '#A0522D', dot: '#5D3A1A', dotStroke: '#8B6914', glow: '#D4A017' },
+        royal: { bg: ['#1a0033', '#0d001a'], line: '#FFD700', lineAlt: '#FFA500', dot: '#FFD700', dotStroke: '#FF8C00', glow: '#FFD700' },
+        festival: { bg: ['#fff0f5', '#ffe0eb'], line: '#DC143C', lineAlt: '#FF4500', dot: '#C71585', dotStroke: '#DC143C', glow: '#FF69B4' },
+        sacred: { bg: ['#FFF8DC', '#FAEBD7'], line: '#CD853F', lineAlt: '#B8860B', dot: '#8B7355', dotStroke: '#CD853F', glow: '#DAA520' },
+        earth: { bg: ['#f5f5dc', '#e8e4d4'], line: '#556B2F', lineAlt: '#6B8E23', dot: '#3B4A2B', dotStroke: '#556B2F', glow: '#7CFC00' },
+        monochrome: { bg: ['#ffffff', '#f8f8f8'], line: '#1a1a1a', lineAlt: '#333333', dot: '#000000', dotStroke: '#444444', glow: '#666666' },
+    }
+
+    toSVG(pattern: KolamPattern, options?: { theme?: string; animate?: boolean; lineWidth?: number; dotSize?: number }): string {
         const w = pattern.width, h = pattern.height
+        const theme = KolamEngine.COLOR_THEMES[options?.theme ?? 'traditional'] ?? KolamEngine.COLOR_THEMES.traditional
+        const animate = options?.animate ?? false
+        const lineWidth = options?.lineWidth ?? 2.5
+        const dotSize = options?.dotSize ?? 4
+
         let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">\n`
-        svg += `  <rect width="${w}" height="${h}" fill="white"/>\n`
 
-        // Draw lines
-        svg += `  <g stroke="#8B4513" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">\n`
-        for (const line of pattern.lines) {
+        // Definitions: gradients, filters
+        svg += `  <defs>\n`
+        svg += `    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">\n`
+        svg += `      <stop offset="0%" stop-color="${theme.bg[0]}"/>\n`
+        svg += `      <stop offset="100%" stop-color="${theme.bg[1]}"/>\n`
+        svg += `    </radialGradient>\n`
+        svg += `    <filter id="glow"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>\n`
+        svg += `    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">\n`
+        svg += `      <stop offset="0%" stop-color="${theme.line}"/>\n`
+        svg += `      <stop offset="100%" stop-color="${theme.lineAlt}"/>\n`
+        svg += `    </linearGradient>\n`
+        svg += `  </defs>\n`
+
+        // Background
+        svg += `  <rect width="${w}" height="${h}" fill="url(#bgGrad)" rx="8"/>\n`
+
+        // Decorative border
+        svg += `  <rect x="6" y="6" width="${w - 12}" height="${h - 12}" fill="none" stroke="${theme.line}" stroke-width="1" stroke-dasharray="4 4" opacity="0.3" rx="4"/>\n`
+
+        // Draw lines with gradient
+        const totalLines = pattern.lines.length
+        svg += `  <g stroke="url(#lineGrad)" stroke-width="${lineWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">\n`
+        pattern.lines.forEach((line, idx) => {
+            const delay = animate ? (idx / totalLines * 3).toFixed(2) : 0
+            const animAttr = animate ? ` stroke-dasharray="1000" stroke-dashoffset="1000"><animate attributeName="stroke-dashoffset" from="1000" to="0" dur="2s" begin="${delay}s" fill="freeze"/` : ''
             if (line.controlPoints && line.controlPoints.length > 0) {
-                // Quadratic Bézier curve (for Sikku/Neli)
                 const cp = line.controlPoints[0]
-                svg += `    <path d="M ${line.start.x.toFixed(1)} ${line.start.y.toFixed(1)} Q ${cp.x.toFixed(1)} ${cp.y.toFixed(1)} ${line.end.x.toFixed(1)} ${line.end.y.toFixed(1)}"/>\n`
+                svg += `    <path d="M ${line.start.x.toFixed(1)} ${line.start.y.toFixed(1)} Q ${cp.x.toFixed(1)} ${cp.y.toFixed(1)} ${line.end.x.toFixed(1)} ${line.end.y.toFixed(1)}"${animAttr}>\n`
             } else {
-                svg += `    <line x1="${line.start.x.toFixed(1)}" y1="${line.start.y.toFixed(1)}" x2="${line.end.x.toFixed(1)}" y2="${line.end.y.toFixed(1)}"/>\n`
+                svg += `    <line x1="${line.start.x.toFixed(1)}" y1="${line.start.y.toFixed(1)}" x2="${line.end.x.toFixed(1)}" y2="${line.end.y.toFixed(1)}"${animAttr}>\n`
             }
-        }
+        })
         svg += `  </g>\n`
 
-        // Draw dots
-        svg += `  <g fill="#333" stroke="#666" stroke-width="1">\n`
-        for (const dot of pattern.dots) {
-            svg += `    <circle cx="${dot.x.toFixed(1)}" cy="${dot.y.toFixed(1)}" r="4"/>\n`
-        }
+        // Draw dots with glow
+        svg += `  <g fill="${theme.dot}" stroke="${theme.dotStroke}" stroke-width="1.5">\n`
+        pattern.dots.forEach((dot, idx) => {
+            const animDelay = animate ? (idx / pattern.dots.length * 2).toFixed(2) : null
+            if (animate) {
+                svg += `    <circle cx="${dot.x.toFixed(1)}" cy="${dot.y.toFixed(1)}" r="0"><animate attributeName="r" from="0" to="${dotSize}" dur="0.3s" begin="${animDelay}s" fill="freeze"/></circle>\n`
+            } else {
+                svg += `    <circle cx="${dot.x.toFixed(1)}" cy="${dot.y.toFixed(1)}" r="${dotSize}"/>\n`
+            }
+        })
         svg += `  </g>\n`
+
+        // Center marker
+        svg += `  <circle cx="${this.centerX}" cy="${this.centerY}" r="2" fill="${theme.glow}" opacity="0.5"/>\n`
+
         svg += `</svg>`
-
         return svg
     }
 
@@ -927,6 +1006,9 @@ export function mapFormToEngine(formValues: {
         'Mandala Kolam': 'mandala',
         'Freehand Kolam': 'neli',
         'Swastika Kolam': 'lsystem',
+        'Celtic Knot Kolam': 'dragon',
+        '3D Kolam': 'koch',
+        'Digital Kolam': 'sierpinski',
     }
     const template = typeMap[formValues.kolamType ?? ''] ?? 'pulli'
 

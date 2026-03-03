@@ -4,7 +4,7 @@ import { KolamEngine, mapFormToEngine } from '@/lib/kolam-engine'
 export async function POST(req: Request) {
     try {
         const body = await req.json()
-        const { kolamType, gridSize, symmetryType, dotGridType, pathStyle, culturalContext } = body
+        const { kolamType, gridSize, symmetryType, dotGridType, pathStyle, culturalContext, theme, animate, lineWidth, dotSize } = body
 
         // Map form values to engine parameters
         const { template, gridSize: size, symmetry, gridType } = mapFormToEngine({
@@ -14,7 +14,12 @@ export async function POST(req: Request) {
         // Generate the pattern algorithmically
         const engine = new KolamEngine(size)
         const pattern = engine.generateFromTemplate(template, gridType, symmetry)
-        const svg = engine.toSVG(pattern)
+        const svg = engine.toSVG(pattern, {
+            theme: theme ?? 'traditional',
+            animate: animate ?? false,
+            lineWidth: lineWidth ?? 2.5,
+            dotSize: dotSize ?? 4,
+        })
 
         // Convert SVG to base64 data URL for display
         const svgBase64 = Buffer.from(svg).toString('base64')

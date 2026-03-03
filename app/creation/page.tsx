@@ -133,6 +133,11 @@ export default function KolamCreationPage() {
   const [karmaPoints, setKarmaPoints] = useState<number | null>(null);
   const [generationMode, setGenerationMode] = useState<'algorithmic' | 'ai'>('algorithmic');
   const [metadata, setMetadata] = useState<any>(null);
+  const [colorTheme, setColorTheme] = useState('traditional');
+  const [lineWidth, setLineWidth] = useState(2.5);
+  const [dotSize, setDotSize] = useState(4);
+  const [animateDrawing, setAnimateDrawing] = useState(false);
+  const [svgRaw, setSvgRaw] = useState<string | null>(null);
 
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -204,6 +209,7 @@ export default function KolamCreationPage() {
     setResultImage(null);
     setResultText(null);
     setMetadata(null);
+    setSvgRaw(null);
     try {
       let response;
       // Randomly select values for any blank field
@@ -229,7 +235,7 @@ export default function KolamCreationPage() {
         // ALGORITHMIC generation — uses KolamEngine with L-systems, symmetry transforms
         response = await fetch("/api/generate-algorithmic", {
           method: "POST",
-          body: JSON.stringify(filledForm),
+          body: JSON.stringify({ ...filledForm, theme: colorTheme, animate: animateDrawing, lineWidth, dotSize }),
           headers: { "Content-Type": "application/json" },
         });
       } else {
@@ -245,6 +251,7 @@ export default function KolamCreationPage() {
       setResultImage(data.imageUrl || null);
       setResultText(data.details || null);
       if (data.metadata) setMetadata(data.metadata);
+      if (data.svg) setSvgRaw(data.svg);
       if (data.imageUrl && data.details) {
         setShowPostModal(true);
       }
@@ -326,15 +333,15 @@ export default function KolamCreationPage() {
                 <div className="flex gap-1 p-1 rounded-xl bg-yellow-100 border-2 border-yellow-400">
                   <button type="button" onClick={() => setGenerationMode('algorithmic')}
                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold font-serif transition-all ${generationMode === 'algorithmic'
-                        ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
-                        : 'text-yellow-700 hover:bg-yellow-200'
+                      ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
+                      : 'text-yellow-700 hover:bg-yellow-200'
                       }`}>
                     🧮 Algorithmic
                   </button>
                   <button type="button" onClick={() => setGenerationMode('ai')}
                     className={`flex-1 px-3 py-2 rounded-lg text-sm font-extrabold font-serif transition-all ${generationMode === 'ai'
-                        ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
-                        : 'text-yellow-700 hover:bg-yellow-200'
+                      ? 'bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white shadow-lg'
+                      : 'text-yellow-700 hover:bg-yellow-200'
                       }`}>
                     ✨ AI-Assisted
                   </button>
@@ -413,8 +420,63 @@ export default function KolamCreationPage() {
                       </div>
                     )}
                   </div>
+                  {/* Advanced Algorithmic Controls */}
+                  {generationMode === 'algorithmic' && (
+                    <div className="space-y-3 p-3 rounded-xl bg-yellow-100/60 border border-yellow-300">
+                      <p className="text-xs font-bold text-yellow-700 font-serif">⚙️ Advanced Controls</p>
+                      {/* Color Theme Picker */}
+                      <div>
+                        <label className="block text-xs font-bold mb-1 text-yellow-700 font-serif">Color Theme</label>
+                        <div className="flex gap-2 flex-wrap">
+                          {[
+                            { id: 'traditional', label: '🪔 Traditional', colors: ['#8B4513', '#FFF8E1'] },
+                            { id: 'royal', label: '👑 Royal', colors: ['#FFD700', '#1a0033'] },
+                            { id: 'festival', label: '🎉 Festival', colors: ['#DC143C', '#fff0f5'] },
+                            { id: 'sacred', label: '🙏 Sacred', colors: ['#CD853F', '#FFF8DC'] },
+                            { id: 'earth', label: '🌿 Earth', colors: ['#556B2F', '#f5f5dc'] },
+                            { id: 'monochrome', label: '⬛ Mono', colors: ['#1a1a1a', '#ffffff'] },
+                          ].map(t => (
+                            <button key={t.id} type="button" onClick={() => setColorTheme(t.id)}
+                              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold font-serif border-2 transition-all ${colorTheme === t.id ? 'border-yellow-600 shadow-lg scale-105' : 'border-transparent opacity-70 hover:opacity-100'
+                                }`}
+                              style={{ background: t.colors[1] }}>
+                              <span className="w-3 h-3 rounded-full border" style={{ background: t.colors[0] }} />
+                              <span style={{ color: t.colors[0] }}>{t.label}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* Line Width Slider */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-yellow-700 font-serif w-24">Line Width</label>
+                        <input type="range" min="1" max="6" step="0.5" value={lineWidth}
+                          onChange={e => setLineWidth(parseFloat(e.target.value))}
+                          className="flex-1 accent-yellow-500" />
+                        <span className="text-xs font-bold text-yellow-700 w-8 text-right">{lineWidth}px</span>
+                      </div>
+                      {/* Dot Size Slider */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-yellow-700 font-serif w-24">Dot Size</label>
+                        <input type="range" min="2" max="8" step="1" value={dotSize}
+                          onChange={e => setDotSize(parseInt(e.target.value))}
+                          className="flex-1 accent-yellow-500" />
+                        <span className="text-xs font-bold text-yellow-700 w-8 text-right">{dotSize}px</span>
+                      </div>
+                      {/* Animate Toggle */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-xs font-bold text-yellow-700 font-serif w-24">Animate</label>
+                        <button type="button" onClick={() => setAnimateDrawing(!animateDrawing)}
+                          className={`relative w-10 h-5 rounded-full transition-colors ${animateDrawing ? 'bg-yellow-500' : 'bg-yellow-200'
+                            }`}>
+                          <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${animateDrawing ? 'translate-x-5' : 'translate-x-0.5'
+                            }`} />
+                        </button>
+                        <span className="text-xs text-yellow-600 font-serif">{animateDrawing ? 'Step-by-step drawing' : 'Instant render'}</span>
+                      </div>
+                    </div>
+                  )}
                   <Button type="button" onClick={handleGenerate} disabled={loading} className="w-full mt-2 bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white font-extrabold shadow-xl hover:from-yellow-600 hover:to-yellow-500 transition-all duration-200 transform hover:scale-105 border-yellow-700 rounded-2xl font-serif">
-                    {loading ? "Generating…" : variantImage ? "Create Variant" : "Generate Kolam"}
+                    {loading ? "Generating…" : variantImage ? "Create Variant" : "🧮 Generate Kolam"}
                   </Button>
                 </form>
                 {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
@@ -433,6 +495,32 @@ export default function KolamCreationPage() {
                 {resultImage ? (
                   <div className="flex flex-col items-center gap-4">
                     <Image src={resultImage} alt="Generated Kolam" width={400} height={400} className="rounded-2xl border-4 border-yellow-400 object-contain max-h-80 w-full bg-yellow-50 shadow-xl" />
+                    {/* Download Buttons (algorithmic mode) */}
+                    {svgRaw && (
+                      <div className="flex gap-2 w-full">
+                        <Button type="button" className="flex-1 bg-yellow-100 text-yellow-800 border-2 border-yellow-400 hover:bg-yellow-200 font-bold font-serif rounded-xl text-sm"
+                          onClick={() => {
+                            const blob = new Blob([svgRaw], { type: 'image/svg+xml' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a'); a.href = url; a.download = `kolam-${metadata?.template || 'pattern'}.svg`;
+                            a.click(); URL.revokeObjectURL(url);
+                          }}>📥 Download SVG</Button>
+                        <Button type="button" className="flex-1 bg-yellow-100 text-yellow-800 border-2 border-yellow-400 hover:bg-yellow-200 font-bold font-serif rounded-xl text-sm"
+                          onClick={() => {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            const img = new window.Image();
+                            img.onload = () => {
+                              canvas.width = img.width * 2; canvas.height = img.height * 2;
+                              ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+                              const a = document.createElement('a');
+                              a.href = canvas.toDataURL('image/png'); a.download = `kolam-${metadata?.template || 'pattern'}.png`;
+                              a.click();
+                            };
+                            img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgRaw)));
+                          }}>📥 Download PNG</Button>
+                      </div>
+                    )}
                     <Button type="button" onClick={handleRecreateVariant} disabled={loading} className="w-full bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white font-extrabold shadow-xl hover:from-yellow-600 hover:to-yellow-500 transition-all duration-200 transform hover:scale-105 rounded-2xl font-serif">
                       {loading ? "Creating Variant…" : "Recreate Variant"}
                     </Button>
