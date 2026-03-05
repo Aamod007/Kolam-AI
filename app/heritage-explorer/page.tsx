@@ -299,7 +299,7 @@ export default function HeritageExplorerPage() {
     loadInitialKarma();
   }, [user]);
 
-  const saveKolamKarmaToSupabase = async (earnedKarma: number) => {
+  const saveKolamKarma = async (earnedKarma: number) => {
     if (!user) {
       console.error('No user logged in, skipping karma save');
       return false;
@@ -474,8 +474,8 @@ export default function HeritageExplorerPage() {
           setEarnedKarmaDisplay(null);
         }, 1000);
 
-        // Save earned karma to Supabase
-        saveKolamKarmaToSupabase(karmaEarned).then(success => {
+        // Save earned karma to MongoDB
+        saveKolamKarma(karmaEarned).then(success => {
           if (!success) {
             console.error('Failed to save karma for individual question');
             // Revert local state if save failed
@@ -518,8 +518,8 @@ export default function HeritageExplorerPage() {
         setEarnedKarmaDisplay(null);
       }, 2000);
 
-      // Save final earned karma to Supabase
-      saveKolamKarmaToSupabase(totalKarmaEarned).then(success => {
+      // Save final earned karma to MongoDB
+      saveKolamKarma(totalKarmaEarned).then(success => {
         if (success) {
           console.log('Final quiz karma saved successfully');
           setKarmaSaved(true);

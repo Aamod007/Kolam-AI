@@ -84,7 +84,7 @@ export default function ProfilePage() {
     }
     setUploading(true);
 
-    // Convert to Base64 to store in MongoDB instead of Supabase Storage
+    // Convert to Base64 to store in MongoDB
     const reader = new FileReader();
     reader.onload = async (event) => {
       const base64String = event.target?.result as string;

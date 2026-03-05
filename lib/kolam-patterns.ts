@@ -197,7 +197,21 @@ export const KOLAM_PATTERNS: KolamPattern[] = [
     difficulty: 'beginner',
     gridSize: 0,
     category: 'spiral',
-    dots: [],
+    dots: (() => {
+      const dots: PatternDot[] = []
+      const centerX = 140
+      const centerY = 140
+      const numTurns = 3
+      const pointsPerTurn = 12
+      for (let i = 0; i < numTurns * pointsPerTurn; i++) {
+        const angle = (2 * Math.PI * i) / pointsPerTurn
+        const radius = 10 + (i / (numTurns * pointsPerTurn)) * 120
+        const x = centerX + radius * Math.cos(angle)
+        const y = centerY + radius * Math.sin(angle)
+        dots.push({ id: i, x, y })
+      }
+      return dots
+    })(),
     lines: (() => {
       const lines = []
       const centerX = 140
@@ -242,7 +256,27 @@ export const KOLAM_PATTERNS: KolamPattern[] = [
     difficulty: 'advanced',
     gridSize: 0,
     category: 'mandala',
-    dots: [],
+    dots: (() => {
+      const dots: PatternDot[] = []
+      const centerX = 140
+      const centerY = 140
+      const rings = 3
+      const pointsPerRing = 8
+      
+      dots.push({ id: 0, x: centerX, y: centerY })
+      let dotId = 1
+      
+      for (let ring = 1; ring <= rings; ring++) {
+        const radius = ring * 40
+        for (let i = 0; i < pointsPerRing; i++) {
+          const angle = (2 * Math.PI * i) / pointsPerRing
+          const x = centerX + radius * Math.cos(angle)
+          const y = centerY + radius * Math.sin(angle)
+          dots.push({ id: dotId++, x, y })
+        }
+      }
+      return dots
+    })(),
     lines: (() => {
       const lines = []
       const centerX = 140
@@ -331,6 +365,84 @@ export const KOLAM_PATTERNS: KolamPattern[] = [
       'Can be decorated with colors'
     ],
     culturalSignificance: 'Meenakolam is drawn during Pongal to honor the fish and invoke blessings for abundance.'
+  },
+  {
+    id: 'pulli-7x7-basic',
+    name: '7x7 Pulli Kolam',
+    nameTamil: '7x7 புலி கோலம்',
+    description: 'A larger 7x7 dot grid pattern for intermediate practitioners.',
+    difficulty: 'intermediate',
+    gridSize: 7,
+    category: 'pulli',
+    dots: Array.from({ length: 49 }, (_, i) => ({
+      id: i,
+      x: 60 + (i % 7) * 30,
+      y: 60 + Math.floor(i / 7) * 30
+    })),
+    lines: (() => {
+      const lines: PatternLine[] = []
+      for (let row = 0; row < 7; row++) {
+        for (let col = 0; col < 6; col++) {
+          lines.push({
+            from: { x: 60 + col * 30, y: 60 + row * 30 },
+            to: { x: 60 + (col + 1) * 30, y: 60 + row * 30 }
+          })
+        }
+      }
+      for (let col = 0; col < 7; col++) {
+        for (let row = 0; row < 6; row++) {
+          lines.push({
+            from: { x: 60 + col * 30, y: 60 + row * 30 },
+            to: { x: 60 + col * 30, y: 60 + (row + 1) * 30 }
+          })
+        }
+      }
+      return lines
+    })(),
+    steps: [
+      { stepNumber: 1, instruction: 'Place a 7x7 dot grid', instructionTamil: '7x7 புலி கட்டத்தை வைக்கவும்', highlightDots: Array.from({ length: 49 }, (_, i) => i), linesToDraw: [] },
+      { stepNumber: 2, instruction: 'Connect all horizontal lines', instructionTamil: 'அனைத்து கிடைமட்ட கோடுகளை இணைக்கவும்', highlightDots: [], linesToDraw: [] },
+      { stepNumber: 3, instruction: 'Connect all vertical lines', instructionTamil: 'அனைத்து செங்குத்து கோடுகளை இணைக்கவும்', highlightDots: [], linesToDraw: [] },
+    ],
+    tips: [
+      'This pattern requires patience and precision',
+      'Use a ruler for accurate dot placement',
+      'Practice with smaller grids first'
+    ],
+    culturalSignificance: 'Larger Kolams are drawn during festivals and special occasions.'
+  },
+  {
+    id: 'sikku-3x3',
+    name: '3x3 Sikku Kolam',
+    nameTamil: '3x3 சிக்கு கோலம்',
+    description: 'A simple Sikku pattern with interlocking curves on a 3x3 grid.',
+    difficulty: 'beginner',
+    gridSize: 3,
+    category: 'sikku',
+    dots: [
+      { id: 0, x: 100, y: 100 }, { id: 1, x: 140, y: 100 }, { id: 2, x: 180, y: 100 },
+      { id: 3, x: 100, y: 140 }, { id: 4, x: 140, y: 140 }, { id: 5, x: 180, y:  140},
+      { id: 6, x: 100, y: 180 }, { id: 7, x: 140, y: 180 }, { id: 8, x: 180, y: 180 },
+    ],
+    lines: [
+      { from: { x: 100, y: 100 }, to: { x: 120, y: 110 } },
+      { from: { x: 120, y: 110 }, to: { x: 140, y: 100 } },
+      { from: { x: 140, y: 100 }, to: { x: 160, y: 110 } },
+      { from: { x: 160, y: 110 }, to: { x: 180, y: 100 } },
+      { from: { x: 100, y: 140 }, to: { x: 120, y: 160 } },
+      { from: { x: 120, y: 160 }, to: { x: 140, y: 180 } },
+    ],
+    steps: [
+      { stepNumber: 1, instruction: 'Place a 3x3 dot grid', instructionTamil: '3x3 புலி கட்டத்தை வைக்கவும்', highlightDots: [0,1,2,3,4,5,6,7,8], linesToDraw: [] },
+      { stepNumber: 2, instruction: 'Create curves between top row dots', instructionTamil: 'மேல் வரிசையில் வளைவுகள் உருவாக்கவும்', highlightDots: [0,1,2], linesToDraw: [] },
+      { stepNumber: 3, instruction: 'Create diagonal curves', instructionTamil: 'மூலைவிட்ட வளைவுகள் உருவாக்கவும்', highlightDots: [3,6], linesToDraw: [] },
+    ],
+    tips: [
+      'Sikku patterns weave over and under',
+      'Keep curves smooth and consistent',
+      'Practice with your finger first'
+    ],
+    culturalSignificance: 'Sikku Kolams are especially popular during Diwali.'
   },
 ]
 

@@ -1,7 +1,9 @@
 """
 Kolam AI Backend - FastAPI server for Kolam analysis and generation
+Version 2.0 - With proper error handling and validation
 """
 
+import logging
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -9,18 +11,17 @@ from typing import Optional
 import base64
 import io
 import json
-import numpy as np
-from PIL import Image
 import tempfile
 import os
+from pydantic import BaseModel, Field, validator
 
-from kolam_analyzer import KolamAnalyzer, analyze_kolam
-from kolam_generator import KolamGenerator, generate_kolam, KolamType, SymmetryType
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Kolam AI API",
     description="API for analyzing and generating Kolam patterns",
-    version="1.0.0"
+    version="2.0.0"
 )
 
 app.add_middleware(
@@ -32,106 +33,131 @@ app.add_middleware(
 )
 
 
+class GenerateRequest(BaseModel):
+    """Request model for Kolam generation"""
+    template: str = Field(default="pulli_5x5")
+    grid_size: int = Field(default=5, ge=2, le=15)
+    symmetry: str = Field(default="none")
+    output_format: str = Field(default="json")
+    
+    @validator('template')
+    def validate_template(cls, v):
+        valid_templates = [
+            "pulli_3x3", "pulli_5x5", "pulli_7x7", "pulli_9x9", "pulli_11x11",
+            "sikku_3x3", "sikku_5x5", "sikku_7x7", "sikku_basic", "sikku_diagonal",
+            "star", "diamond", "spiral", "mandala", "kodi", "padi"
+        ]
+        if v not in valid_templates:
+            raise ValueError(f"Invalid template. Valid: {valid_templates}")
+        return v
+    
+    @validator('symmetry')
+    def validate_symmetry(cls, v):
+        valid = ["none", "horizontal", "vertical", "diagonal", "rotational_90", "rotational_180", "radial"]
+        if v not in valid:
+            raise ValueError(f"Invalid symmetry. Valid: {valid}")
+        return v
+    
+    @validator('output_format')
+    def validate_output_format(cls, v):
+        valid = ["json", "svg", "png"]
+        if v not in valid:
+            raise ValueError(f"Invalid output_format. Valid: {valid}")
+        return v
+
+
 @app.get("/")
 async def root():
     return {
-        "message": "Kolam AI API",
-        "version": "1.0.0",
+        "message": "Kolam AI API v2.0.0",
+        "version": "2.0.0",
         "endpoints": {
             "analyze": "/analyze - Analyze a Kolam image",
             "generate": "/generate - Generate a Kolam pattern",
             "templates": "/templates - List available templates",
-            "principles": "/principles - Get design principles"
-        }
+            "principles": "/principles - Get design principles",
+            "health": "/health - Health check"
+        },
+        "documentation": "/docs"
     }
 
 
 @app.post("/analyze")
-async def analyze_kolam_endpoint(file: UploadFile = File(...)):
+async def analyze_kolam_endpoint(
+    file: UploadFile = File(...),
+    min_dot_radius: int = Form(default=3),
+    max_dot_radius: int = Form(default=20)
+):
     """
     Analyze a Kolam image to extract design principles
-    
-    Returns:
-        - Dot grid information (rows, cols, spacing)
-        - Symmetry analysis (horizontal, vertical, diagonal, rotational)
-        - Complexity metrics
-        - Design principles
     """
     try:
+        if min_dot_radius < 1 or min_dot_radius > 50:
+            raise HTTPException(status_code=400, detail="min_dot_radius must be between 1 and 50")
+        if max_dot_radius < 1 or max_dot_radius > 100:
+            raise HTTPException(status_code=400, detail="max_dot_radius must be between 1 and 100")
+        if min_dot_radius >= max_dot_radius:
+            raise HTTPException(status_code=400, detail="min_dot_radius must be less than max_dot_radius")
+        
         contents = await file.read()
         
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-            tmp.write(contents)
-            tmp_path = tmp.name
+        if len(contents) > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="File too large. Max 10MB")
+        
+        if not contents:
+            raise HTTPException(status_code=400, detail="Empty file")
         
         try:
-            result = analyze_kolam(tmp_path)
-            return JSONResponse(content=result)
-        finally:
-            os.unlink(tmp_path)
+            from kolam_analyzer import KolamAnalyzer, KolamAnalyzerConfig
             
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/analyze/base64")
-async def analyze_kolam_base64(image_data: str = Form(...)):
-    """
-    Analyze a Kolam image from base64 encoded string
-    """
-    try:
-        image_bytes = base64.b64decode(image_data)
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-            tmp.write(image_bytes)
-            tmp_path = tmp.name
-        
-        try:
-            result = analyze_kolam(tmp_path)
-            return JSONResponse(content=result)
-        finally:
-            os.unlink(tmp_path)
+            config = KolamAnalyzerConfig(
+                min_dot_radius=min_dot_radius,
+                max_dot_radius=max_dot_radius
+            )
+            analyzer = KolamAnalyzer(config)
             
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                tmp.write(contents)
+                tmp_path = tmp.name
+            
+            try:
+                result = analyzer.analyze(tmp_path)
+                return JSONResponse(content=result.to_dict())
+            finally:
+                os.unlink(tmp_path)
+                
+        except ImportError as e:
+            logger.warning(f"Python dependencies not available: {e}")
+            return JSONResponse(content={
+                "error": "Analysis service temporarily unavailable",
+                "details": "Python dependencies not installed",
+                "setup_instructions": "Run: cd python && pip install -r requirements.txt"
+            }, status=503)
+            
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Analysis error: {e}")
+        return JSONResponse(content={
+            "error": "Analysis failed",
+            "details": str(e)
+        }, status=500)
 
 
 @app.post("/generate")
-async def generate_kolam_endpoint(
-    template: str = Form("pulli_5x5"),
-    grid_size: int = Form(5),
-    symmetry: str = Form("none"),
-    output_format: str = Form("json")
-):
+async def generate_kolam_endpoint(request: GenerateRequest):
     """
     Generate a Kolam pattern
-    
-    Parameters:
-        - template: Template name (pulli_3x3, pulli_5x5, sikku_basic, star, diamond, spiral, mandala)
-        - grid_size: Size of the dot grid (3-11)
-        - symmetry: Symmetry type (none, horizontal, vertical, diagonal, rotational_90, rotational_180, radial)
-        - output_format: Output format (json, svg, png)
     """
     try:
-        if grid_size < 2 or grid_size > 15:
-            raise HTTPException(status_code=400, detail="Grid size must be between 2 and 15")
-        
-        valid_templates = [
-            "pulli_3x3", "pulli_5x5", "pulli_7x7",
-            "sikku_basic", "sikku_diagonal",
-            "star", "diamond", "spiral", "mandala"
-        ]
-        if template not in valid_templates:
-            raise HTTPException(status_code=400, detail=f"Invalid template. Valid: {valid_templates}")
-        
-        valid_symmetries = ["none", "horizontal", "vertical", "diagonal", "rotational_90", "rotational_180", "radial"]
-        if symmetry not in valid_symmetries:
-            raise HTTPException(status_code=400, detail=f"Invalid symmetry. Valid: {valid_symmetries}")
-        
-        generator = KolamGenerator(grid_size=grid_size)
-        pattern = generator.generate_from_template(template)
-        
-        if symmetry != "none":
+        try:
+            from kolam_generator import KolamGenerator, KolamGeneratorConfig, generate_kolam as py_generate
+            
+            config = KolamGeneratorConfig(grid_size=request.grid_size)
+            generator = KolamGenerator(config)
+            pattern = generator.generate_from_template(request.template)
+            
+            from kolam_generator import SymmetryType
             sym_map = {
                 "horizontal": SymmetryType.HORIZONTAL,
                 "vertical": SymmetryType.VERTICAL,
@@ -140,63 +166,77 @@ async def generate_kolam_endpoint(
                 "rotational_180": SymmetryType.ROTATIONAL_180,
                 "radial": SymmetryType.RADIAL,
             }
-            pattern = generator.generate_with_symmetry(pattern.lines, sym_map[symmetry])
-        
-        if output_format == "json":
-            result = {
-                "template": template,
-                "grid_size": grid_size,
-                "symmetry": symmetry,
-                "num_dots": len(pattern.dots),
-                "num_lines": len(pattern.lines),
-                "dots": [{"id": d.id, "x": d.x, "y": d.y} for d in pattern.dots],
-                "lines": [
-                    {
-                        "from": {"x": ls.start.x, "y": ls.start.y},
-                        "to": {"x": ls.end.x, "y": ls.end.y}
-                    }
-                    for ls in pattern.lines
-                ],
-                "construction_steps": [
-                    {
-                        "from": {"x": ls.start.x, "y": ls.start.y},
-                        "to": {"x": ls.end.x, "y": ls.end.y}
-                    }
-                    for ls in pattern.lines
-                ]
-            }
-            return JSONResponse(content=result)
-        
-        elif output_format == "svg":
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".svg") as tmp:
-                pattern.to_svg(tmp.name)
-                with open(tmp.name, 'r') as f:
-                    svg_content = f.read()
-            os.unlink(tmp.name)
             
-            return StreamingResponse(
-                io.BytesIO(svg_content.encode()),
-                media_type="image/svg+xml",
-                headers={"Content-Disposition": f"attachment; filename=kolam.svg"}
-            )
-        
-        elif output_format == "png":
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-                pattern.to_image(tmp.name)
-                with open(tmp.name, 'rb') as f:
-                    img_data = f.read()
-            os.unlink(tmp.name)
+            if request.symmetry != "none" and request.symmetry in sym_map:
+                pattern = generator.generate_with_symmetry(pattern.lines, sym_map[request.symmetry])
             
-            return StreamingResponse(
-                io.BytesIO(img_data),
-                media_type="image/png",
-                headers={"Content-Disposition": f"attachment; filename=kolam.png"}
-            )
-        
+            if request.output_format == "json":
+                result = {
+                    "template": request.template,
+                    "grid_size": request.grid_size,
+                    "symmetry": request.symmetry,
+                    "num_dots": len(pattern.dots),
+                    "num_lines": len(pattern.lines),
+                    "dots": [{"id": d.id, "x": d.x, "y": d.y} for d in pattern.dots],
+                    "lines": [
+                        {
+                            "from": {"x": ls.start.x, "y": ls.start.y},
+                            "to": {"x": ls.end.x, "y": ls.end.y}
+                        }
+                        for ls in pattern.lines
+                    ],
+                    "construction_steps": [
+                        {
+                            "from": {"x": ls.start.x, "y": ls.start.y},
+                            "to": {"x": ls.end.x, "y": ls.end.y}
+                        }
+                        for ls in pattern.lines
+                    ]
+                }
+                return JSONResponse(content=result)
+            
+            elif request.output_format == "svg":
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".svg") as tmp:
+                    pattern.to_svg(tmp.name)
+                    with open(tmp.name, 'r') as f:
+                        svg_content = f.read()
+                os.unlink(tmp.name)
+                
+                return StreamingResponse(
+                    io.BytesIO(svg_content.encode()),
+                    media_type="image/svg+xml",
+                    headers={"Content-Disposition": f"attachment; filename=kolam.svg"}
+                )
+            
+            elif request.output_format == "png":
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                    pattern.to_image(tmp.name)
+                    with open(tmp.name, 'rb') as f:
+                        img_data = f.read()
+                os.unlink(tmp.name)
+                
+                return StreamingResponse(
+                    io.BytesIO(img_data),
+                    media_type="image/png",
+                    headers={"Content-Disposition": f"attachment; filename=kolam.png"}
+                )
+            
+        except ImportError as e:
+            logger.warning(f"Python dependencies not available: {e}")
+            return JSONResponse(content={
+                "error": "Generation service temporarily unavailable",
+                "details": "Python dependencies not installed",
+                "setup_instructions": "Run: cd python && pip install -r requirements.txt"
+            }, status=503)
+            
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Generation error: {e}")
+        return JSONResponse(content={
+            "error": "Generation failed",
+            "details": str(e)
+        }, status=500)
 
 
 @app.get("/templates")
@@ -204,11 +244,11 @@ async def list_templates():
     """List all available Kolam templates"""
     templates = {
         "pulli": {
-            "templates": ["pulli_3x3", "pulli_5x5", "pulli_7x7"],
+            "templates": ["pulli_3x3", "pulli_5x5", "pulli_7x7", "pulli_9x9", "pulli_11x11"],
             "description": "Dot-based Kolam patterns with straight line connections"
         },
         "sikku": {
-            "templates": ["sikku_basic", "sikku_diagonal"],
+            "templates": ["sikku_3x3", "sikku_5x5", "sikku_7x7", "sikku_basic", "sikku_diagonal"],
             "description": "Knot-based Kolam patterns with curved interlacings"
         },
         "geometric": {
@@ -218,6 +258,10 @@ async def list_templates():
         "spiral": {
             "templates": ["spiral", "mandala"],
             "description": "Spiral and circular patterns"
+        },
+        "other": {
+            "templates": ["kodi", "padi"],
+            "description": "Traditional pattern styles"
         }
     }
     
@@ -231,7 +275,8 @@ async def list_templates():
             })
     
     return JSONResponse(content={
-        "templates": all_templates
+        "templates": all_templates,
+        "count": len(all_templates)
     })
 
 
@@ -239,12 +284,6 @@ async def list_templates():
 async def get_design_principles():
     """
     Get information about Kolam design principles
-    
-    This endpoint provides educational information about:
-    - Construction rules
-    - Symmetry types
-    - Grid classifications
-    - Pattern categories
     """
     principles = {
         "construction_rules": [
@@ -263,24 +302,18 @@ async def get_design_principles():
             "radial": "Multiple axes radiating from center"
         },
         "grid_types": {
-            "square_grid": "Regular grid with equal horizontal and vertical spacing",
-            "rectangular_grid": "Grid with different horizontal and vertical spacing",
+            "square_grid": "Regular grid with equal spacing",
+            "rectangular_grid": "Different horizontal and vertical spacing",
             "diamond_grid": "Square grid rotated 45 degrees",
-            "triangular_grid": "Triangle-based lattice arrangement",
+            "triangular_grid": "Triangle-based lattice",
             "hexagonal_grid": "Honeycomb-style arrangement"
         },
         "pattern_types": {
-            "pulli": "Dot-based patterns (Pulli Kolam)",
-            "sikku": "Knot-based patterns (Sikku Kolam)",
-            "kambi": "Line-based patterns (Kambi Kolam)",
-            "neli": "Curvy flowing patterns (Neli Kolam)",
+            "pulli": "Dot-based patterns",
+            "sikku": "Knot-based patterns",
+            "kambi": "Line-based patterns",
+            "neli": "Curvy flowing patterns",
             "freehand": "Free-form artistic patterns"
-        },
-        "complexity_levels": {
-            "simple": "Basic patterns with few dots and lines",
-            "moderate": "Intermediate patterns with moderate complexity",
-            "complex": "Advanced patterns with multiple symmetries",
-            "very_complex": "Expert-level intricate designs"
         }
     }
     
@@ -290,7 +323,31 @@ async def get_design_principles():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "service": "kolam-ai-api"}
+    status = {
+        "status": "healthy",
+        "service": "kolam-ai-api",
+        "version": "2.0.0"
+    }
+    
+    try:
+        import numpy
+        status["numpy"] = "available"
+    except ImportError:
+        status["numpy"] = "unavailable"
+    
+    try:
+        import cv2
+        status["opencv"] = "available"
+    except ImportError:
+        status["opencv"] = "unavailable"
+    
+    try:
+        import networkx
+        status["networkx"] = "available"
+    except ImportError:
+        status["networkx"] = "unavailable"
+    
+    return JSONResponse(content=status)
 
 
 if __name__ == "__main__":

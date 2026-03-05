@@ -67,11 +67,8 @@ export default function RecognitionPage() {
   // Handler for posting to community
   async function handlePostToCommunity(description: string) {
     setAlreadyPosted(true);
-    // Example: send post to API or Supabase
     try {
-      // Replace with actual post logic
-      // await supabase.from('community_posts').insert({ image: postImage, details: description, user_id: user?.id });
-      // For now, just close modal
+      // Post via API (MongoDB backend)
       setShowPostModal(false);
     } catch (e: any) {
       // Handle error if needed

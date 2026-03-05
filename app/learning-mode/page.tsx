@@ -31,7 +31,7 @@ function PatternCanvas({
   showFull?: boolean
   animatedLines?: number
 }) {
-  const [dimensions] = useState({ width: 400, height: 400 })
+  const [dimensions] = useState({ width: Math.min(400, window.innerWidth - 40), height: Math.min(400, window.innerWidth - 40) })
   const scale = 0.9
   const offsetX = (dimensions.width / 2) - 140
   const offsetY = (dimensions.height / 2) - 140
@@ -117,6 +117,7 @@ export default function LearningModePage() {
   const [showFull, setShowFull] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
   const [filterMode, setFilterMode] = useState<'simple' | 'database'>('database')
+  const [animationSpeed, setAnimationSpeed] = useState<number>(1)
 
   const selectedPattern = selectedPatternId ? getPatternById(selectedPatternId) : null
   const simpleKolamData = kolamType === 'pulli' ? generatePulliKolam(gridSize, 50) : generateSikkuKolam(gridSize, 50)
@@ -130,11 +131,13 @@ export default function LearningModePage() {
 
   useEffect(() => {
     if (!isPlaying) return
+    const baseDelay = selectedPattern ? 2000 : 500
+    const delay = baseDelay / animationSpeed
     if (currentStep < totalSteps) {
-      const timer = setTimeout(() => { setAnimatedCount(prev => prev + 1); setCurrentStep(prev => prev + 1) }, selectedPattern ? 2000 : 500)
+      const timer = setTimeout(() => { setAnimatedCount(prev => prev + 1); setCurrentStep(prev => prev + 1) }, delay)
       return () => clearTimeout(timer)
     } else { setIsPlaying(false) }
-  }, [currentStep, isPlaying, selectedPattern, totalSteps])
+  }, [currentStep, isPlaying, selectedPattern, totalSteps, animationSpeed])
 
   const handlePrevStep = () => { if (currentStep > 0) { setCurrentStep(prev => prev - 1); setAnimatedCount(prev => Math.max(0, prev - 1)) } }
   const handleNextStep = () => { if (currentStep < totalSteps) { setCurrentStep(prev => prev + 1); setAnimatedCount(prev => prev + 1) } }
@@ -255,7 +258,7 @@ export default function LearningModePage() {
                 </div>
 
                 {/* Playback Controls */}
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap items-center">
                   <Button onClick={startAnimation} disabled={isPlaying}
                     className="bg-gradient-to-r from-yellow-500 via-yellow-400 to-yellow-600 text-white font-extrabold shadow-xl hover:from-yellow-600 hover:to-yellow-500 rounded-2xl font-serif flex-1">
                     {isPlaying ? '▶ Playing...' : '▶ Play'}
@@ -264,6 +267,16 @@ export default function LearningModePage() {
                   <Button onClick={handleNextStep} disabled={currentStep >= totalSteps} className="bg-yellow-50 text-yellow-700 border-2 border-yellow-400 rounded-xl font-serif">▶</Button>
                   <Button onClick={() => { setShowFull(true); setAnimatedCount(totalSteps); setCurrentStep(totalSteps); }} className="bg-yellow-50 text-yellow-700 border-2 border-yellow-400 rounded-xl font-serif">⊙</Button>
                   <Button onClick={resetAnimation} className="bg-yellow-50 text-red-500 border-2 border-yellow-400 rounded-xl font-serif">↺</Button>
+                  <select 
+                    value={animationSpeed} 
+                    onChange={(e) => setAnimationSpeed(Number(e.target.value))}
+                    className="bg-yellow-50 border border-yellow-400 rounded-xl px-2 py-1 text-yellow-700 font-serif text-sm"
+                  >
+                    <option value={0.5}>0.5x</option>
+                    <option value={1}>1x</option>
+                    <option value={1.5}>1.5x</option>
+                    <option value={2}>2x</option>
+                  </select>
                 </div>
               </CardContent>
             </Card>
